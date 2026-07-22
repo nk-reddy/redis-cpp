@@ -1,5 +1,3 @@
-[![progress-banner](https://backend.codecrafters.io/progress/redis/114bfb89-e851-4c95-92de-4b8b821f335c)](https://app.codecrafters.io/users/nk-reddy?r=2qF)
-
 This is a starting point for C++ solutions to the
 ["Build Your Own Redis" Challenge](https://codecrafters.io/challenges/redis).
 
