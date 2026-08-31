@@ -13,5 +13,6 @@ std::string Store::get(const std::string &key) {
     if (it == data.end()) {
         return "$-1\r\n";
     }
-    return it->second;
+    std::string value = it->second;
+    return "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
 }
