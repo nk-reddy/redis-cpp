@@ -1,6 +1,6 @@
 #include "client.h"
-#include "commands.h"
-#include "store.h"
+#include "commands/commands.h"
+#include "store/store.h"
 
 #include <string>
 #include <cctype>
