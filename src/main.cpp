@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
   if (bytes_read > 0) {
     buffer[bytes_read] = '\0';
-    if (strcmp(buffer, "PING") == 0) {
+    if (strcmp(buffer, "*1\r\n$4\r\nping\r\n") == 0) {
       const char *response = "+PONG\r\n";
       send(client_fd, response, strlen(response), 0);
     }
