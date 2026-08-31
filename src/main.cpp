@@ -50,9 +50,19 @@ int main(int argc, char **argv) {
   // You can use print statements as follows for debugging, they'll be visible when running tests.
   std::cout << "Logs from your program will appear here!\n";
 
-  accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  std::cout << "Client connected\n";
+  int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
 
+  char buffer[1024];
+  ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+  if (bytes_read > 0) {
+    buffer[bytes_read] = '\0';
+    if (strcmp(buffer, "PING") == 0) {
+      const char *response = "+PONG\r\n";
+      send(client_fd, response, strlen(response), 0);
+    }
+  }
+
+  close(client_fd);
   close(server_fd);
 
   return 0;
