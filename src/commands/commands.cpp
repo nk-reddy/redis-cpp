@@ -1,5 +1,5 @@
 #include "commands.h"
-#include "store.h"
+#include "../store/store.h"
 
 #include <string>
 #include <vector> 
