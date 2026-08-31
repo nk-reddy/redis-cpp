@@ -52,10 +52,12 @@ int main(int argc, char **argv) {
 
   int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
 
+  const char *response = "+PONG\r\n";
+  
   char buffer[1024];
-  ssize_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-  if (bytes_read > 0) {
-    const char *response = "+PONG\r\n";
+  while (1) {
+    int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+    if (bytes_received <= 0) {break;}
     send(client_fd, response, strlen(response), 0);
   }
 
