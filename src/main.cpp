@@ -1,5 +1,5 @@
 #include "client.h"
-#include "store.h"
+#include "store/store.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
   Store store;
   while (true) {
     int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-    std::thread(handle_client, client_fd, std::ref(store)).detach();
+    std::thread([client_fd, &store] { handle_client(client_fd, store); }).detach();
   }
 
   close(server_fd);
