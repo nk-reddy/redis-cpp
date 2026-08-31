@@ -1,16 +1,62 @@
 #include "client.h"
 
+#include <string>
+#include <cctype>
 #include <cstring>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <vector>
+#include <algorithm>
+
+std::vector<std::string> parse_resp(std::string input);
 
 void handle_client(int client_fd) {
-  const char *response = "+PONG\r\n";
   char buffer[1024];
   while (1) {
     int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
     if (bytes_received <= 0) {break;}
-    send(client_fd, response, strlen(response), 0);
+
+    std::string ret(buffer, bytes_received);
+    std::vector<std::string> data = parse_resp(ret);
+    if (data.empty()) {
+        break;
+    }
+    std::transform(data[0].begin(), data[0].end(), data[0].begin(), ::tolower);
+    if (data[0] == "echo") {
+        if (data.size() < 2) {
+            break;
+        }
+        std::string response = "$" + std::to_string(data[1].length()) + "\r\n" + data[1] + "\r\n";
+        send(client_fd, response.data(), response.length(), 0);
+    }
+    else {
+        const char *response = "+PONG\r\n";
+        send(client_fd, response, strlen(response), 0);
+    }
   }
+
   close(client_fd);
+}
+
+std::vector<std::string> parse_resp(std::string input) {
+    size_t pos = 1;
+    std::vector<std::string> elems;
+
+    size_t end = input.find("\r\n", pos);
+    int nelems = std::stoi(input.substr(pos, end - pos));
+    if (nelems <= 0) {
+        return elems;
+    }
+
+    // reach the first data val past the '$'
+    pos = end + 3;
+    for (size_t i = 0; i < nelems; i++) {
+        size_t end = input.find("\r\n", pos);
+        int bytes = std::stoi(input.substr(pos, end - pos));
+        pos = end + 2;
+        elems.push_back(input.substr(pos, bytes));
+        pos += (bytes + 3);
+    }
+
+    return elems;
 }
