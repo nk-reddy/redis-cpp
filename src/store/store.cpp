@@ -59,3 +59,28 @@ std::string Store::rpush(const std::string &key, const std::vector<std::string> 
     }
     return ":" + std::to_string(list.size()) + "\r\n";
 }
+
+std::string Store::lrange(const std::string &key, const std::string &start, const std::string &stop) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) {
+        return "*0\r\n";
+    }
+    if (!std::holds_alternative<std::vector<std::string>>(it->second.value)) {
+        return "-ERR invalid arguments\r\n";
+    }
+
+    int start_i = std::stoi(start); 
+    int end_i = std::stoi(stop);
+    auto &list = std::get<std::vector<std::string>>(it->second.value);
+    if (start_i >= list.size() || start_i > end_i) {
+        return "*0\r\n";
+    }
+
+    int response_size = end_i >= list.size() ? list.size() - start_i + 1 : end_i - start_i + 1;
+    std::string response = "*" + std::to_string(response_size) + "\r\n";
+    for (int i = start_i; i < end_i + 1; ++i) {
+        response += "$" + std::to_string(list[i].length()) + "\r\n" + list[i] + "\r\n";
+    }
+    return response;
+}

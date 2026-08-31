@@ -55,3 +55,10 @@ std::string handle_command_rpush(const std::vector<std::string>& args, Store &st
     std::vector<std::string> values(args.begin() + 2, args.end());
     return store.rpush(args[1], values);
 }
+
+std::string handle_command_lrange(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 4) {
+        return "-ERR invalid arguments\r\n";
+    }
+    return store.lrange(args[1], args[2], args[3]);
+}
