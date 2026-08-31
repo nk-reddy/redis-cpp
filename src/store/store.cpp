@@ -77,9 +77,9 @@ std::string Store::lrange(const std::string &key, const std::string &start, cons
         return "*0\r\n";
     }
 
-    int response_size = end_i >= list.size() ? list.size() - start_i + 1 : end_i - start_i + 1;
+    int response_size = end_i >= list.size() ? list.size() - start_i : end_i - start_i + 1;
     std::string response = "*" + std::to_string(response_size) + "\r\n";
-    for (int i = start_i; i < end_i + 1; ++i) {
+    for (int i = start_i; i < start_i + response_size; ++i) {
         response += "$" + std::to_string(list[i].length()) + "\r\n" + list[i] + "\r\n";
     }
     return response;
