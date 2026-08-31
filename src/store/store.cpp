@@ -39,7 +39,7 @@ std::string Store::get(const std::string &key) {
     return "$-1\r\n";
 }
 
-std::string Store::rpush(const std::string &key, const std::string &value) {
+std::string Store::rpush(const std::string &key, const std::vector<std::string> &values) {
     std::lock_guard<std::mutex> lock(mtx);
     auto it = data.find(key);
     if (it == data.end()) {
@@ -54,6 +54,8 @@ std::string Store::rpush(const std::string &key, const std::string &value) {
     }
 
     auto &list = std::get<std::vector<std::string>>(it->second.value);
-    list.push_back(value);
+    for (const std::string &value : values) {
+        list.push_back(value);
+    }
     return ":" + std::to_string(list.size()) + "\r\n";
 }

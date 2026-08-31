@@ -27,5 +27,5 @@ class Store {
     void set(const std::string &key, const std::string &value);
     void set_with_expiry(const std::string &key, const std::string &value, int ms);
     std::string get(const std::string &key);
-    std::string rpush(const std::string &key, const std::string &value);
+    std::string rpush(const std::string &key, const std::vector<std::string> &values);
 };
