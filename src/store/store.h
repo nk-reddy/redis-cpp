@@ -5,6 +5,8 @@
 #include <chrono>
 #include <optional>
 #include <mutex>
+#include <variant>
+#include <vector>
 
 using RedisValue = std::variant<
     std::string, 
