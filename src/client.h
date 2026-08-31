@@ -1,3 +1,3 @@
 #pragma once
 
-void handle_client(int client_fd);
+void handle_client(int client_fd, Store &store);

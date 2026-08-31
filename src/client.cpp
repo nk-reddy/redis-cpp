@@ -1,4 +1,6 @@
 #include "client.h"
+#include "commands.h"
+#include "store.h"
 
 #include <string>
 #include <cctype>
@@ -10,7 +12,7 @@
 
 std::vector<std::string> parse_resp(std::string input);
 
-void handle_client(int client_fd) {
+void handle_client(int client_fd, Store &store) {
   char buffer[1024];
   while (1) {
     int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
@@ -22,19 +24,23 @@ void handle_client(int client_fd) {
         break;
     }
     std::transform(data[0].begin(), data[0].end(), data[0].begin(), ::tolower);
+    std::string response = "";
+
+    // handle the commands by case
     if (data[0] == "echo") {
-        if (data.size() < 2) {
-            break;
-        }
-        std::string response = "$" + std::to_string(data[1].length()) + "\r\n" + data[1] + "\r\n";
-        send(client_fd, response.data(), response.length(), 0);
+        response = handle_command_echo(data);
+    }
+    else if (data[0] == "set") {
+        response = handle_command_set(data, store);
+    }
+    else if (data[0] == "get") {
+        response = handle_command_get(data, store);
     }
     else {
-        const char *response = "+PONG\r\n";
-        send(client_fd, response, strlen(response), 0);
+        response = handle_command_default();
     }
+    send(client_fd, response.data(), response.length(), 0);
   }
-
   close(client_fd);
 }
 
