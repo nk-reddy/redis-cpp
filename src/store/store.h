@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <chrono>
 #include <optional>
+#include <mutex>
 
 struct Entry {
     std::string value;
@@ -12,6 +13,7 @@ struct Entry {
 
 class Store {
     private:
+    std::mutex mtx;
     std::unordered_map<std::string, Entry> data;
 
     public:

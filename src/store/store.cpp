@@ -4,8 +4,10 @@
 #include <unordered_map>
 #include <optional>
 #include <chrono>
+#include <mutex>
 
 void Store::set(const std::string &key, const std::string &value) {
+    std::lock_guard<std::mutex> lock(mtx);
     data[key] = Entry{
         .value = value,
         .expiry = std::nullopt
@@ -13,6 +15,7 @@ void Store::set(const std::string &key, const std::string &value) {
 }
 
 void Store::set_with_expiry(const std::string &key, const std::string &value, int ms) {
+    std::lock_guard<std::mutex> lock(mtx);
     data[key] = Entry{
         .value = value,
         .expiry = std::chrono::steady_clock::now() + std::chrono::milliseconds(ms)
@@ -20,6 +23,7 @@ void Store::set_with_expiry(const std::string &key, const std::string &value, in
 }
 
 std::string Store::get(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
     auto it = data.find(key);
     if (it == data.end()) {
         return "$-1\r\n";
