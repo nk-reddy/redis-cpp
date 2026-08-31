@@ -1,3 +1,5 @@
+#include "client.h"
+
 #include <iostream>
 #include <cstdlib>
 #include <string>
@@ -7,6 +9,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <thread>
 
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
@@ -50,19 +53,11 @@ int main(int argc, char **argv) {
   // You can use print statements as follows for debugging, they'll be visible when running tests.
   std::cout << "Logs from your program will appear here!\n";
 
-  int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-
-  const char *response = "+PONG\r\n";
-  
-  char buffer[1024];
-  while (1) {
-    int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    if (bytes_received <= 0) {break;}
-    send(client_fd, response, strlen(response), 0);
+  while (true) {
+    int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
+    std::thread(handle_client, client_fd).detach();
   }
 
-  close(client_fd);
   close(server_fd);
-
   return 0;
 }
