@@ -47,3 +47,10 @@ std::string handle_command_get(const std::vector<std::string>& args, Store &stor
     }
     return store.get(args[1]);
 }
+
+std::string handle_command_rpush(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 3) {
+        return "-ERR invalid arguments\r\n";
+    }
+    return store.rpush(args[1], args[2]);
+}

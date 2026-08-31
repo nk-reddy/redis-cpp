@@ -32,6 +32,28 @@ std::string Store::get(const std::string &key) {
         data.erase(it);
         return "$-1\r\n";
     }
-    std::string value = it->second.value;
-    return "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
+    if (std::holds_alternative<std::string>(it->second.value)) {
+        std::string value = std::get<std::string>(it->second.value);
+        return "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
+    }
+    return "$-1\r\n";
+}
+
+std::string Store::rpush(const std::string &key, const std::string &value) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) {
+        data[key] = Entry{
+            .value = std::vector<std::string>{},
+            .expiry = std::nullopt
+        };
+        it = data.find(key);
+    }
+    if (!std::holds_alternative<std::vector<std::string>>(it->second.value)) {
+        return "-ERR invalid arguments\r\n";
+    }
+
+    auto &list = std::get<std::vector<std::string>>(it->second.value);
+    list.push_back(value);
+    return ":" + std::to_string(list.size()) + "\r\n";
 }
