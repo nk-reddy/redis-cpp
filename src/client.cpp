@@ -36,6 +36,9 @@ void handle_client(int client_fd, Store &store) {
     else if (data[0] == "get") {
         response = handle_command_get(data, store);
     }
+    else if (data[0] == "rpush") {
+        response = handle_command_rpush(data, store);
+    }
     else {
         response = handle_command_default();
     }
