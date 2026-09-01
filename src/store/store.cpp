@@ -10,6 +10,7 @@ void Store::set(const std::string &key, const std::string &value) {
     std::lock_guard<std::mutex> lock(mtx);
     data[key] = Entry{
         .value = value,
+        .type = "string",
         .expiry = std::nullopt
     };
 }
@@ -18,6 +19,7 @@ void Store::set_with_expiry(const std::string &key, const std::string &value, in
     std::lock_guard<std::mutex> lock(mtx);
     data[key] = Entry{
         .value = value,
+        .type = "string",
         .expiry = std::chrono::steady_clock::now() + std::chrono::milliseconds(ms)
     };
 }
@@ -196,4 +198,13 @@ std::string Store::blpop(const std::string &key, double timeout) {
     std::string start = list[0];
     list.erase(list.begin());
     return "*2\r\n$" + std::to_string(key.length()) + "\r\n" + key + "\r\n$" + std::to_string(start.length()) + "\r\n" + start + "\r\n";
+}
+
+std::string Store::type(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) {
+        return "+none\r\n";
+    }
+    return "+" + it->second.type + "\r\n";
 }

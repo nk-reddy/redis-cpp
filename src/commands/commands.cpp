@@ -94,3 +94,10 @@ std::string handle_command_blpop(const std::vector<std::string>& args, Store &st
     }
     return store.blpop(args[1], std::stod(args[2]));   
 }
+
+std::string handle_command_type(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 2) {
+        return "-ERR invalid arguments\r\n";
+    }
+    return store.type(args[1]);    
+}

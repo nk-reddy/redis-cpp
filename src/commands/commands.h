@@ -15,3 +15,4 @@ std::string handle_command_lpush(const std::vector<std::string>& args, Store &st
 std::string handle_command_llen(const std::vector<std::string>& args, Store &store);
 std::string handle_command_lpop(const std::vector<std::string>& args, Store &store);
 std::string handle_command_blpop(const std::vector<std::string>& args, Store &store);
+std::string handle_command_type(const std::vector<std::string>& args, Store &store);

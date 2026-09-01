@@ -16,6 +16,7 @@ using RedisValue = std::variant<
 
 struct Entry {
     RedisValue value;
+    std::string type;
     std::optional<std::chrono::steady_clock::time_point> expiry;
 };
 
@@ -35,4 +36,5 @@ class Store {
     std::string llen(const std::string &key);
     std::string lpop(const std::string &key, int n);
     std::string blpop(const std::string &key, double timeout);
+    std::string type(const std::string &key);
 };
