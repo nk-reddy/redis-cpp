@@ -92,5 +92,5 @@ std::string handle_command_blpop(const std::vector<std::string>& args, Store &st
     if (args.size() != 3) {
         return "-ERR invalid arguments\r\n";
     }
-    return store.blpop(args[1], std::stoi(args[2]));   
+    return store.blpop(args[1], std::stod(args[2]));   
 }
