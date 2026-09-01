@@ -320,27 +320,30 @@ std::string Store::xrange(const std::string &key, const std::string &start, cons
     // need to get a subset of stream from start to stop, inclusive
     std::pair<long long, long long> id_start = parse_stream_id(start, true);
     std::pair<long long, long long> id_stop = parse_stream_id(stop);
-    std::vector<StreamEntry> response{};
+    std::vector<StreamEntry> responseEntries{};
     for (StreamEntry &entry: stream) {
         std::pair<long long, long long> id_curr = parse_stream_id(entry.id);
         if (id_curr.first > id_start.first || id_curr.first == id_start.first && id_curr.second >= id_start.second) {
             if (id_curr.first < id_stop.first || id_curr.first == id_stop.first && id_curr.second <= id_stop.second) {
-                response.push_back(entry);
+                responseEntries.push_back(entry);
             }
         }
     }
 
     // return that subset as a RESP array
-    std::vector<std::string> flattenedResponse{};
-    for (StreamEntry &entry: response) {
+    std::string response = "*" + std::to_string(responseEntries.size()) + "\r\n";
+    for (const StreamEntry &entry : responseEntries) {
         std::vector<std::string> flattenedFields{};
-        for (std::pair<std::string, std::string> &pair: entry.fields) {
-            flattenedFields.push_back(pair.first);
-            flattenedFields.push_back(pair.second);
+        for (const auto &field : entry.fields) {
+            flattenedFields.push_back(field.first);
+            flattenedFields.push_back(field.second);
         }
-        std::string encoded_fields = encode_resp_array(flattenedFields);
-        std::vector<std::string> entry_array = {entry.id, encoded_fields};
-        flattenedResponse.push_back(encode_resp_array(entry_array));
+
+        // [id, [fields...]]
+        response += "*2\r\n";
+        response += ("$" + std::to_string(entry.id.length()) + "\r\n" + entry.id + "\r\n");
+        response += encode_resp_array(flattenedFields);
     }
-    return encode_resp_array(flattenedResponse);
+
+    return response;
 }
