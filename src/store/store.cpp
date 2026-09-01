@@ -144,7 +144,9 @@ std::string Store::lpop(const std::string &key, int n) {
         return "*0\r\n";
     }
     if (n < 1) {
-        n = 1;
+        std::string start = list[0];
+        list.erase(list.begin());
+        return "$" + std::to_string(start.length()) + "\r\n" + start + "\r\n";
     }
     if (n > list.size()) {
         n = list.size();
