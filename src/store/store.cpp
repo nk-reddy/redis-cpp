@@ -187,7 +187,7 @@ std::string Store::blpop(const std::string &key, int timeout) {
     else {
         bool got_ready = cv.wait_for(lk, std::chrono::seconds(timeout), ready);
         if (!got_ready) {
-            return "*0\r\n";
+            return "*-1\r\n";
         }
     }
 
