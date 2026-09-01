@@ -355,6 +355,7 @@ std::string Store::xread(const std::vector<std::string> &keys, const std::vector
     for (size_t i = 0; i < keys.size(); i++) {
         std::pair<long long, long long> id_val = parse_stream_id(ids[i]);
         id_val.second++;
+        response += "*2\r\n" + encode_resp_string(keys[i]);
         response += xrange(
             keys[i], 
             std::to_string(id_val.first) + "-" + std::to_string(id_val.second), 

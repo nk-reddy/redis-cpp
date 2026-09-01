@@ -25,3 +25,7 @@ std::string encode_resp_array(const std::vector<std::string> &values) {
     }
     return response;
 }
+
+std::string encode_resp_string(const std::string &str) {
+    return "$" + std::to_string(str.length()) + "\r\n" + str + "\r\n";
+}
