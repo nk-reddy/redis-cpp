@@ -21,6 +21,7 @@ struct Entry {
 class Store {
     private:
     std::mutex mtx;
+    std::condition_variable cv;
     std::unordered_map<std::string, Entry> data;
 
     public:
@@ -32,4 +33,5 @@ class Store {
     std::string lpush(const std::string &key, const std::vector<std::string> &values);
     std::string llen(const std::string &key);
     std::string lpop(const std::string &key, int n);
+    std::string blpop(const std::string &key, int timeout);
 };

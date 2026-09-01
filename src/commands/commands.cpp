@@ -87,3 +87,10 @@ std::string handle_command_lpop(const std::vector<std::string>& args, Store &sto
     }
     return "-ERR invalid arguments\r\n";  
 }
+
+std::string handle_command_blpop(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 3) {
+        return "-ERR invalid arguments\r\n";
+    }
+    return store.blpop(args[1], std::stoi(args[2]));   
+}

@@ -57,6 +57,7 @@ std::string Store::rpush(const std::string &key, const std::vector<std::string> 
     for (const std::string &value : values) {
         list.push_back(value);
     }
+    cv.notify_one();
     return ":" + std::to_string(list.size()) + "\r\n";
 }
 
@@ -112,6 +113,7 @@ std::string Store::lpush(const std::string &key, const std::vector<std::string> 
     for (const std::string &value : values) {
         list.insert(list.begin(), value);
     }
+    cv.notify_one();
     return ":" + std::to_string(list.size()) + "\r\n";
 }
 
@@ -159,4 +161,39 @@ std::string Store::lpop(const std::string &key, int n) {
         response += ("$" + std::to_string(str.length()) + "\r\n" + str + "\r\n");
     }
     return response;
+}
+
+std::string Store::blpop(const std::string &key, int timeout) {
+    std::unique_lock<std::mutex> lk(mtx);
+
+    auto it = data.find(key);
+    if (it != data.end() &&
+        !std::holds_alternative<std::vector<std::string>>(it->second.value)) {
+        return "-ERR invalid arguments\r\n";
+    }
+
+    auto ready = [&]() {
+        auto it = data.find(key);
+        if (it == data.end()) {
+            return false;
+        }
+        auto &list = std::get<std::vector<std::string>>(it->second.value);
+        return !list.empty();
+    };
+
+    if (timeout == 0) {
+        cv.wait(lk, ready);
+    }
+    else {
+        bool got_ready = cv.wait_for(lk, std::chrono::seconds(timeout), ready);
+        if (!got_ready) {
+            return "*0\r\n";
+        }
+    }
+
+    auto it = data.find(key);
+    auto &list = std::get<std::vector<std::string>>(it->second.value);
+    std::string start = list[0];
+    list.erase(list.begin());
+    return "*2\r\n$" + std::to_string(key.length()) + "\r\n" + key + "\r\n$" + std::to_string(start.length()) + "\r\n" + start + "\r\n";
 }

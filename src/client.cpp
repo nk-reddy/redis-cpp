@@ -51,6 +51,9 @@ void handle_client(int client_fd, Store &store) {
     else if (data[0] == "lpop") {
         response = handle_command_lpop(data, store);
     }
+    else if (data[0] == "blpop") {
+        response = handle_command_blpop(data, store);
+    }
     else {
         response = handle_command_default();
     }
