@@ -44,4 +44,5 @@ class Store {
     std::string blpop(const std::string &key, double timeout);
     std::string type(const std::string &key);
     std::string xadd(const std::string &key, const std::string &id, const std::vector<std::string> &values);
+    std::string validate_stream_id(const std::string &key, const std::string &id);
 };

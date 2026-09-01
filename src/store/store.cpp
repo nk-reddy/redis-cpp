@@ -222,13 +222,31 @@ std::string Store::xadd(const std::string &key, const std::string &id, const std
         };
     }
 
+    if (validate_stream_id(key, id) != "") {
+        return validate_stream_id(key, id);
+    }
+
     StreamEntry entry {.id = id};
     for (size_t i = 1; i < values.size(); i += 2) {
         entry.fields.push_back({values[i-1], values[i]});
     }
-    
+
     it = data.find(key);
     auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
     stream.push_back(entry);
     return "$" + std::to_string(id.length()) + "\r\n" + id + "\r\n";
+}
+
+std::string Store::validate_stream_id(const std::string &key, const std::string &id) {
+    if (key == "0:0") {
+        return "-ERR The ID specified in XADD must be greater than 0-0\r\n";
+    }
+    auto it = data.find(key);
+    auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
+    std::string ms_prev = stream[stream.size() - 1].id;
+    std::string ms_entry = key.substr(0, key.find("-"));
+    if (ms_entry <= ms_prev) {
+        return "-ERR The ID specified in XADD is equal or smaller than the target stream top item\r\n";
+    }
+    return "";
 }
