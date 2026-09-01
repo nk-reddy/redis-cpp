@@ -9,9 +9,15 @@
 #include <vector>
 #include <condition_variable>
 
+struct StreamEntry {
+    std::string id;
+    std::vector<std::pair<std::string, std::string>> fields;
+};
+
 using RedisValue = std::variant<
     std::string, 
-    std::vector<std::string>
+    std::vector<std::string>,
+    std::vector<StreamEntry>
 >;
 
 struct Entry {
@@ -37,4 +43,5 @@ class Store {
     std::string lpop(const std::string &key, int n);
     std::string blpop(const std::string &key, double timeout);
     std::string type(const std::string &key);
+    std::string xadd(const std::string &key, const std::string &id, const std::vector<std::string> &values);
 };

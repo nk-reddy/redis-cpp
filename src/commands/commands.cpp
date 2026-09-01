@@ -101,3 +101,11 @@ std::string handle_command_type(const std::vector<std::string>& args, Store &sto
     }
     return store.type(args[1]);    
 }
+
+std::string handle_command_xadd(const std::vector<std::string>& args, Store &store) {
+    if (args.size() < 5 || args.size() % 2 == 0) {
+        return "-ERR invalid arguments\r\n";
+    }
+    std::vector<std::string> values(args.begin() + 3, args.end());
+    return store.xadd(args[1], args[2], values);
+}

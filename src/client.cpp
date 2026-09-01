@@ -57,6 +57,9 @@ void handle_client(int client_fd, Store &store) {
     else if (data[0] == "type") {
         response = handle_command_type(data, store);
     }
+    else if (data[0] == "xadd") {
+        response = handle_command_xadd(data, store);
+    }
     else {
         response = handle_command_default();
     }

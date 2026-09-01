@@ -210,3 +210,25 @@ std::string Store::type(const std::string &key) {
     }
     return "+" + it->second.type + "\r\n";
 }
+
+std::string Store::xadd(const std::string &key, const std::string &id, const std::vector<std::string> &values) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) {
+        data[key] = Entry{
+            .value = std::vector<StreamEntry>{},
+            .type = "stream",
+            .expiry = std::nullopt
+        };
+    }
+
+    StreamEntry entry {.id = id};
+    for (size_t i = 1; i < values.size(); i += 2) {
+        entry.fields.push_back({values[i-1], values[i]});
+    }
+    
+    it = data.find(key);
+    auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
+    stream.push_back(entry);
+    return "$" + std::to_string(id.length()) + "\r\n" + id + "\r\n";
+}
