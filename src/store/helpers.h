@@ -2,6 +2,7 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 std::pair<long long, long long> parse_stream_id(const std::string &id, bool is_start = false);
 
