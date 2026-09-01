@@ -118,7 +118,13 @@ std::string handle_command_xrange(const std::vector<std::string>& args, Store &s
 }
 
 std::string handle_command_xread(const std::vector<std::string>& args, Store &store) {
-    if (args.size() < 4 || args[2] != "STREAMS" || args.size() % 2 != 0) {
+    if (args.size() < 4 || args.size() % 2 != 0) {
+        return "-ERR invalid arguments\r\n";
+    }
+
+    std::string type = args[2];
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+    if (type != "streams") {
         return "-ERR invalid arguments\r\n";
     }
 
