@@ -45,5 +45,5 @@ class Store {
     std::string type(const std::string &key);
     std::string xadd(const std::string &key, std::string id, const std::vector<std::string> &values);
     std::string validate_stream_id(const std::string &key, const std::string &id);
-    void Store::generate_stream_id(const std::string &key, std::string &id);
+    void generate_stream_id(const std::string &key, std::string &id);
 };
