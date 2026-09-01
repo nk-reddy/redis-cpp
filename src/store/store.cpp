@@ -1,4 +1,5 @@
 #include "store.h"
+#include "helpers.h"
 
 #include <string>
 #include <unordered_map>
@@ -302,4 +303,44 @@ void Store::generate_stream_id(const std::string &key, std::string &id) {
     else { new_seq = (new_ms == 0) ? 1 : 0; }
 
     id = std::to_string(new_ms) + "-" + std::to_string(new_seq);
+}
+
+std::string Store::xrange(const std::string &key, const std::string &start, const std::string &stop) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) {
+        return "*0\r\n";
+    }
+    if (!std::holds_alternative<std::vector<StreamEntry>>(it->second.value)) {
+        return "-ERR invalid arguments\r\n";
+    }
+
+    auto &stream = std::get<std::vector<StreamEntry>>(it->second.value); 
+
+    // need to get a subset of stream from start to stop, inclusive
+    std::pair<long long, long long> id_start = parse_stream_id(start, true);
+    std::pair<long long, long long> id_stop = parse_stream_id(stop);
+    std::vector<StreamEntry> response{};
+    for (StreamEntry &entry: stream) {
+        std::pair<long long, long long> id_curr = parse_stream_id(entry.id);
+        if (id_curr.first > id_start.first || id_curr.first == id_start.first && id_curr.second >= id_start.second) {
+            if (id_curr.first < id_stop.first || id_curr.first == id_stop.first && id_curr.second <= id_stop.second) {
+                response.push_back(entry);
+            }
+        }
+    }
+
+    // return that subset as a RESP array
+    std::vector<std::string> flattenedResponse{};
+    for (StreamEntry &entry: response) {
+        std::vector<std::string> flattenedFields{};
+        for (std::pair<std::string, std::string> &pair: entry.fields) {
+            flattenedFields.push_back(pair.first);
+            flattenedFields.push_back(pair.second);
+        }
+        std::string encoded_fields = encode_resp_array(flattenedFields);
+        std::vector<std::string> entry_array = {entry.id, encoded_fields};
+        flattenedResponse.push_back(encode_resp_array(entry_array));
+    }
+    return encode_resp_array(flattenedResponse);
 }

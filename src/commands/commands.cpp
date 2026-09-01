@@ -109,3 +109,10 @@ std::string handle_command_xadd(const std::vector<std::string>& args, Store &sto
     std::vector<std::string> values(args.begin() + 3, args.end());
     return store.xadd(args[1], args[2], values);
 }
+
+std::string handle_command_xrange(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 4) {
+        return "-ERR invalid arguments\r\n";
+    }
+    return store.xrange(args[1], args[2], args[3]); 
+}

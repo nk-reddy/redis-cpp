@@ -60,6 +60,9 @@ void handle_client(int client_fd, Store &store) {
     else if (data[0] == "xadd") {
         response = handle_command_xadd(data, store);
     }
+    else if (data[0] == "xrange") {
+        response = handle_command_xrange(data, store);
+    }
     else {
         response = handle_command_default();
     }
