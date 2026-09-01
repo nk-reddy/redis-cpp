@@ -163,7 +163,7 @@ std::string Store::lpop(const std::string &key, int n) {
     return response;
 }
 
-std::string Store::blpop(const std::string &key, int timeout) {
+std::string Store::blpop(const std::string &key, double timeout) {
     std::unique_lock<std::mutex> lk(mtx);
 
     auto it = data.find(key);
@@ -185,7 +185,7 @@ std::string Store::blpop(const std::string &key, int timeout) {
         cv.wait(lk, ready);
     }
     else {
-        bool got_ready = cv.wait_for(lk, std::chrono::seconds(timeout), ready);
+        bool got_ready = cv.wait_for(lk, std::chrono::duration<double>(timeout), ready);
         if (!got_ready) {
             return "*-1\r\n";
         }

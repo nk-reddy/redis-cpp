@@ -34,5 +34,5 @@ class Store {
     std::string lpush(const std::string &key, const std::vector<std::string> &values);
     std::string llen(const std::string &key);
     std::string lpop(const std::string &key, int n);
-    std::string blpop(const std::string &key, int timeout);
+    std::string blpop(const std::string &key, double timeout);
 };
