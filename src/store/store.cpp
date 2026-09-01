@@ -73,6 +73,8 @@ std::string Store::lrange(const std::string &key, const std::string &start, cons
     int start_i = std::stoi(start); 
     int end_i = std::stoi(stop);
     auto &list = std::get<std::vector<std::string>>(it->second.value);
+    start_i = start_i < 0 ? start_i + list.size() : start_i;
+    end_i = end_i < 0 ? end_i + list.size() : end_i;
     if (start_i >= list.size() || start_i > end_i) {
         return "*0\r\n";
     }
