@@ -128,3 +128,23 @@ std::string Store::llen(const std::string &key) {
     auto &list = std::get<std::vector<std::string>>(it->second.value);
     return ":" + std::to_string(list.size()) + "\r\n";
 }
+
+std::string Store::lpop(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) {
+        return "$-1\r\n";
+    }
+    if (!std::holds_alternative<std::vector<std::string>>(it->second.value)) {
+        return "-ERR invalid arguments\r\n";
+    }
+
+    auto &list = std::get<std::vector<std::string>>(it->second.value);
+    if (list.size() == 0) {
+        return "$-1\r\n";
+    }
+
+    std::string start = list[0];
+    list.erase(list.begin());
+    return "$" + std::to_string(start.length()) + "\r\n" + start + "\r\n";
+}

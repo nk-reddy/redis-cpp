@@ -77,3 +77,10 @@ std::string handle_command_llen(const std::vector<std::string>& args, Store &sto
     }
     return store.llen(args[1]);  
 }
+
+std::string handle_command_lpop(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 2) {
+        return "-ERR invalid arguments\r\n";
+    }
+    return store.lpop(args[1]);  
+}
