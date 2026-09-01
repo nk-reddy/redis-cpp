@@ -116,3 +116,18 @@ std::string handle_command_xrange(const std::vector<std::string>& args, Store &s
     }
     return store.xrange(args[1], args[2], args[3]); 
 }
+
+std::string handle_command_xread(const std::vector<std::string>& args, Store &store) {
+    if (args.size() < 4 || args[2] != "STREAMS" || args.size() % 2 != 0) {
+        return "-ERR invalid arguments\r\n";
+    }
+
+    std::vector<std::string> keys {};
+    std::vector<std::string> ids {};
+    for (size_t i = 2; i < args.size(); ++i) {
+        size_t mid = args.size() / 2;
+        if (i <= mid) { keys.push_back(args[i]); }
+        else { ids.push_back(args[i]); }
+    }
+    return store.xread(keys, ids);
+}

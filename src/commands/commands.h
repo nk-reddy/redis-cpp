@@ -18,3 +18,4 @@ std::string handle_command_blpop(const std::vector<std::string>& args, Store &st
 std::string handle_command_type(const std::vector<std::string>& args, Store &store);
 std::string handle_command_xadd(const std::vector<std::string>& args, Store &store);
 std::string handle_command_xrange(const std::vector<std::string>& args, Store &store);
+std::string handle_command_xread(const std::vector<std::string>& args, Store &store);

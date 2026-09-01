@@ -349,3 +349,17 @@ std::string Store::xrange(const std::string &key, const std::string &start, cons
 
     return response;
 }
+
+std::string Store::xread(const std::vector<std::string> &keys, const std::vector<std::string> &ids) {
+    std::string response = "*" + std::to_string(keys.size()) + "\r\n";
+    for (size_t i = 0; i < keys.size(); i++) {
+        std::pair<long long, long long> id_val = parse_stream_id(ids[i]);
+        id_val.second++;
+        response += xrange(
+            keys[i], 
+            std::to_string(id_val.first) + "-" + std::to_string(id_val.second), 
+            "+"
+        );
+    }
+    return response;
+}
