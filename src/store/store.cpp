@@ -265,7 +265,7 @@ std::string Store::validate_stream_id(const std::string &key, const std::string 
 }
 
 void Store::generate_stream_id(const std::string &key, std::string &id) {
-    if (!id.ends_with("-*")) {
+    if (id.size() < 2 || id.substr(id.size() - 2) != "-*") {
         return;
     }
 
