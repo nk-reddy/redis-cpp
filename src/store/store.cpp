@@ -129,11 +129,11 @@ std::string Store::llen(const std::string &key) {
     return ":" + std::to_string(list.size()) + "\r\n";
 }
 
-std::string Store::lpop(const std::string &key) {
+std::string Store::lpop(const std::string &key, int n) {
     std::lock_guard<std::mutex> lock(mtx);
     auto it = data.find(key);
     if (it == data.end()) {
-        return "$-1\r\n";
+        return "*0\r\n";
     }
     if (!std::holds_alternative<std::vector<std::string>>(it->second.value)) {
         return "-ERR invalid arguments\r\n";
@@ -141,10 +141,20 @@ std::string Store::lpop(const std::string &key) {
 
     auto &list = std::get<std::vector<std::string>>(it->second.value);
     if (list.size() == 0) {
-        return "$-1\r\n";
+        return "*0\r\n";
     }
+    if (n < 1) {
+        n = 1;
+    }
+    if (n > list.size()) {
+        n = list.size();
+    }
+    std::vector<std::string> to_remove(list.begin(), list.begin() + n);
+    list.erase(list.begin(), list.begin() + n);
 
-    std::string start = list[0];
-    list.erase(list.begin());
-    return "$" + std::to_string(start.length()) + "\r\n" + start + "\r\n";
+    std::string response = "*" + std::to_string(to_remove.size()) + "\r\n";
+    for (const std::string &str: to_remove) {
+        response += ("$" + std::to_string(str.length()) + "\r\n" + str + "\r\n");
+    }
+    return response;
 }
