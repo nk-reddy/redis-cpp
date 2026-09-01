@@ -211,7 +211,7 @@ std::string Store::type(const std::string &key) {
     return "+" + it->second.type + "\r\n";
 }
 
-std::string Store::xadd(const std::string &key, const std::string &id, const std::vector<std::string> &values) {
+std::string Store::xadd(const std::string &key, std::string id, const std::vector<std::string> &values) {
     std::lock_guard<std::mutex> lock(mtx);
     auto it = data.find(key);
     if (it == data.end()) {
@@ -222,6 +222,7 @@ std::string Store::xadd(const std::string &key, const std::string &id, const std
         };
     }
 
+    generate_stream_id(key, id);
     std::string error = validate_stream_id(key, id);
     if (error != "") {
         return error;
@@ -261,4 +262,30 @@ std::string Store::validate_stream_id(const std::string &key, const std::string 
         return "-ERR The ID specified in XADD is equal or smaller than the target stream top item\r\n";
     }
     return "";
+}
+
+void Store::generate_stream_id(const std::string &key, std::string &id) {
+    if (!id.ends_with("-*")) {
+        return;
+    }
+
+    long long new_ms = std::stoll(id.substr(0, id.find("-")));
+
+    auto it = data.find(key);
+    auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
+    if (stream.empty()) {
+        id = new_ms == 0 ? "0-1" : std::to_string(new_ms) + "-0";
+        return;
+    }
+
+    std::string prev_id = stream[stream.size() - 1].id;
+    size_t prev_dash = prev_id.find("-");
+    long long prev_ms = std::stoll(prev_id.substr(0, prev_dash));
+    long long prev_seq = std::stoll(prev_id.substr(prev_dash + 1));
+    if (new_ms == prev_ms) {
+        id = std::to_string(new_ms) + "-" + std::to_string(prev_seq + 1);
+        return;
+    }
+    id = new_ms == 0 ? "0-1" : std::to_string(new_ms) + "-0";
+    return;
 }
