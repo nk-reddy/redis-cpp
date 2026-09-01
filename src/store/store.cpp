@@ -222,8 +222,9 @@ std::string Store::xadd(const std::string &key, const std::string &id, const std
         };
     }
 
-    if (validate_stream_id(key, id) != "") {
-        return validate_stream_id(key, id);
+    std::string error = validate_stream_id(key, id);
+    if (error != "") {
+        return error;
     }
 
     StreamEntry entry {.id = id};
@@ -238,14 +239,25 @@ std::string Store::xadd(const std::string &key, const std::string &id, const std
 }
 
 std::string Store::validate_stream_id(const std::string &key, const std::string &id) {
-    if (key == "0:0") {
+    if (id == "0-0") {
         return "-ERR The ID specified in XADD must be greater than 0-0\r\n";
     }
     auto it = data.find(key);
     auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
-    std::string ms_prev = stream[stream.size() - 1].id;
-    std::string ms_entry = key.substr(0, key.find("-"));
-    if (ms_entry <= ms_prev) {
+    if (stream.empty()) {
+        return "";
+    }
+
+    std::string prev_id = stream[stream.size() - 1].id;
+    size_t prev_dash = prev_id.find("-");
+    size_t new_dash = id.find("-");
+
+    long long prev_ms = std::stoll(prev_id.substr(0, prev_dash));
+    long long prev_seq = std::stoll(prev_id.substr(prev_dash + 1));
+    long long new_ms = std::stoll(id.substr(0, new_dash));
+    long long new_seq = std::stoll(id.substr(new_dash + 1));
+
+    if (prev_ms < new_ms || prev_ms == new_ms && prev_seq >= new_seq) {
         return "-ERR The ID specified in XADD is equal or smaller than the target stream top item\r\n";
     }
     return "";
