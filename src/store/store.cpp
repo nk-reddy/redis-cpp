@@ -81,7 +81,7 @@ std::string Store::lrange(const std::string &key, const std::string &start, cons
         if (abs(end_i) > list.size()) { end_i = 0; }
         else { end_i += list.size(); }
     }
-    
+
     if (start_i >= list.size() || start_i > end_i) {
         return "*0\r\n";
     }
@@ -92,4 +92,25 @@ std::string Store::lrange(const std::string &key, const std::string &start, cons
         response += "$" + std::to_string(list[i].length()) + "\r\n" + list[i] + "\r\n";
     }
     return response;
+}
+
+std::string Store::lpush(const std::string &key, const std::vector<std::string> &values) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) {
+        data[key] = Entry{
+            .value = std::vector<std::string>{},
+            .expiry = std::nullopt
+        };
+        it = data.find(key);
+    }
+    if (!std::holds_alternative<std::vector<std::string>>(it->second.value)) {
+        return "-ERR invalid arguments\r\n";
+    }
+
+    auto &list = std::get<std::vector<std::string>>(it->second.value);
+    for (const std::string &value : values) {
+        list.insert(list.begin(), value);
+    }
+    return ":" + std::to_string(list.size()) + "\r\n";
 }

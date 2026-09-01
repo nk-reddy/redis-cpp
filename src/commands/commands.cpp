@@ -62,3 +62,11 @@ std::string handle_command_lrange(const std::vector<std::string>& args, Store &s
     }
     return store.lrange(args[1], args[2], args[3]);
 }
+
+std::string handle_command_lpush(const std::vector<std::string>& args, Store &store) {
+    if (args.size() < 3) {
+        return "-ERR invalid arguments\r\n";
+    }
+    std::vector<std::string> values(args.begin() + 2, args.end());
+    return store.lpush(args[1], values);
+}

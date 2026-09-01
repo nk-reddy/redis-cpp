@@ -42,6 +42,9 @@ void handle_client(int client_fd, Store &store) {
     else if (data[0] == "lrange") {
         response = handle_command_lrange(data, store);
     }
+    else if (data[0] == "lpush") {
+        response = handle_command_lpush(data, store);
+    }
     else {
         response = handle_command_default();
     }
