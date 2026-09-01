@@ -7,6 +7,7 @@
 #include <mutex>
 #include <variant>
 #include <vector>
+#include <condition_variable>
 
 using RedisValue = std::variant<
     std::string, 
