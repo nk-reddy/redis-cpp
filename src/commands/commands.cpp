@@ -122,7 +122,7 @@ std::string handle_command_xread(const std::vector<std::string>& args, Store &st
         return "-ERR invalid arguments\r\n";
     }
 
-    std::string type = args[2];
+    std::string type = args[1];
     std::transform(type.begin(), type.end(), type.begin(), ::tolower);
     if (type != "streams") {
         return "-ERR invalid arguments\r\n";
