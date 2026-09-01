@@ -191,7 +191,7 @@ std::string Store::blpop(const std::string &key, int timeout) {
         }
     }
 
-    auto it = data.find(key);
+    it = data.find(key);
     auto &list = std::get<std::vector<std::string>>(it->second.value);
     std::string start = list[0];
     list.erase(list.begin());
