@@ -265,14 +265,30 @@ std::string Store::validate_stream_id(const std::string &key, const std::string 
 }
 
 void Store::generate_stream_id(const std::string &key, std::string &id) {
+    auto it = data.find(key);
+    auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
+
+    if (id == "*") {
+        auto now = std::chrono::duration_cast<std::chrono::milliseconds>
+                        (std::chrono::system_clock::now().time_since_epoch()).count();
+
+        if (stream.empty()) {
+            id = std::to_string(now) + "-0";
+            return;
+        }
+        std::string prev_id = stream[stream.size() - 1].id;
+        size_t prev_dash = prev_id.find("-");
+        long long prev_ms = std::stoll(prev_id.substr(0, prev_dash));
+        long long prev_seq = std::stoll(prev_id.substr(prev_dash + 1));
+        id = (prev_seq == now) ? std::to_string(now) + std::to_string(prev_seq + 1) : std::to_string(now) + "-0";
+        return;
+    }
+
     if (id.size() < 2 || id.substr(id.size() - 2) != "-*") {
         return;
     }
 
     long long new_ms = std::stoll(id.substr(0, id.find("-")));
-
-    auto it = data.find(key);
-    auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
     if (stream.empty()) {
         id = new_ms == 0 ? "0-1" : std::to_string(new_ms) + "-0";
         return;
