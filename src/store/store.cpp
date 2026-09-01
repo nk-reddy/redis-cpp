@@ -318,8 +318,10 @@ std::string Store::xrange(const std::string &key, const std::string &start, cons
     auto &stream = std::get<std::vector<StreamEntry>>(it->second.value); 
 
     // need to get a subset of stream from start to stop, inclusive
-    std::pair<long long, long long> id_start = start == "-" ? std::make_pair(0LL, 0LL) : parse_stream_id(start, true);
-    std::pair<long long, long long> id_stop = parse_stream_id(stop);
+    std::pair<long long, long long> id_start = start == "-" ? std::make_pair(0LL, 0LL) 
+                                                            : parse_stream_id(start, true);
+    std::pair<long long, long long> id_stop = stop == "+" ? std::make_pair(std::numeric_limits<long long>::max(), std::numeric_limits<long long>::max()) 
+                                                            : parse_stream_id(stop);
     std::vector<StreamEntry> responseEntries{};
     for (StreamEntry &entry: stream) {
         std::pair<long long, long long> id_curr = parse_stream_id(entry.id);
