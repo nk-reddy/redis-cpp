@@ -47,6 +47,7 @@ std::string Store::rpush(const std::string &key, const std::vector<std::string> 
     if (it == data.end()) {
         data[key] = Entry{
             .value = std::vector<std::string>{},
+            .type = "list",
             .expiry = std::nullopt
         };
         it = data.find(key);
@@ -103,6 +104,7 @@ std::string Store::lpush(const std::string &key, const std::vector<std::string> 
     if (it == data.end()) {
         data[key] = Entry{
             .value = std::vector<std::string>{},
+            .type = "list",
             .expiry = std::nullopt
         };
         it = data.find(key);
