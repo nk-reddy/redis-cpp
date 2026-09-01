@@ -257,7 +257,7 @@ std::string Store::validate_stream_id(const std::string &key, const std::string 
     long long new_ms = std::stoll(id.substr(0, new_dash));
     long long new_seq = std::stoll(id.substr(new_dash + 1));
 
-    if (prev_ms < new_ms || prev_ms == new_ms && prev_seq >= new_seq) {
+    if (new_ms < prev_ms || new_ms == prev_ms && new_seq <= prev_seq) {
         return "-ERR The ID specified in XADD is equal or smaller than the target stream top item\r\n";
     }
     return "";
