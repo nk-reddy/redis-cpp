@@ -30,4 +30,5 @@ class Store {
     std::string rpush(const std::string &key, const std::vector<std::string> &values);
     std::string lrange(const std::string &key, const std::string &start, const std::string &stop);
     std::string lpush(const std::string &key, const std::vector<std::string> &values);
+    std::string llen(const std::string &key);
 };

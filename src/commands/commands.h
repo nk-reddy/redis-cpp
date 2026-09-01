@@ -12,3 +12,4 @@ std::string handle_command_get(const std::vector<std::string>& args, Store &stor
 std::string handle_command_rpush(const std::vector<std::string>& args, Store &store);
 std::string handle_command_lrange(const std::vector<std::string>& args, Store &store);
 std::string handle_command_lpush(const std::vector<std::string>& args, Store &store);
+std::string handle_command_llen(const std::vector<std::string>& args, Store &store);

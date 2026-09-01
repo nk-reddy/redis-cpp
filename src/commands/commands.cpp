@@ -70,3 +70,10 @@ std::string handle_command_lpush(const std::vector<std::string>& args, Store &st
     std::vector<std::string> values(args.begin() + 2, args.end());
     return store.lpush(args[1], values);
 }
+
+std::string handle_command_llen(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 2) {
+        return "-ERR invalid arguments\r\n";
+    }
+    return store.llen(args[1]);  
+}
