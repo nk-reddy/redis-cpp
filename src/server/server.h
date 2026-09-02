@@ -11,8 +11,10 @@ class ServerState
     long long master_repl_offset;
 
     public:
-    std::string get_role();
+    ServerState() = default;
     ServerState(std::string role) {
         this->role = role;
     }
+
+    std::string get_role();
 };

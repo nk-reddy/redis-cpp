@@ -218,6 +218,34 @@ std::string handle_command_incr(const std::vector<std::string>& args, Store &sto
 }
 
 std::string handle_command_info(const std::vector<std::string>& args, ServerState &server) {
-    std::string response = "role:" + server.get_role();
-    return encode_resp_string(response);
+    bool req_all, req_server, req_clients, req_memory, req_replication = false;
+    if (args.size() > 2) { return "-ERR invalid arguments\r\n"; }
+    else if (args.size() == 1) { req_all = true; }
+    else {
+        for (size_t i = 1; i < args.size(); ++i) {
+            std::string obj_to_req = args[i];
+            std::transform (obj_to_req.begin(), obj_to_req.end(), obj_to_req.begin(), ::tolower);
+
+            if (obj_to_req == "server") { req_server = true; }
+            else if (obj_to_req == "clients") { req_clients = true; }
+            else if (obj_to_req == "memory") { req_memory = true; }
+            else if (obj_to_req == "replication") { req_replication = true; }
+        }
+    }
+
+    std::string response = "";
+    if (req_all || req_server) {
+
+    }
+    if (req_all || req_server) {
+
+    }
+    if (req_all || req_server) {
+
+    }
+    if (req_all || req_server) {
+
+    }
+
+    return response;
 }
