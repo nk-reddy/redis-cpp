@@ -9,22 +9,32 @@
 
 void Store::set(const std::string &key, const std::string &value) {
     std::lock_guard<std::mutex> lock(mtx);
+
+    unsigned long long version = 0;
+    auto it = data.find(key);
+    if (it != data.end()) { version = it->second.version; }
+
     data[key] = Entry{
         .value = value,
         .type = "string",
         .expiry = std::nullopt,
+        .version = version + 1
     };
-    data[key].version++;
 }
 
 void Store::set_with_expiry(const std::string &key, const std::string &value, int ms) {
     std::lock_guard<std::mutex> lock(mtx);
+
+    unsigned long long version = 0;
+    auto it = data.find(key);
+    if (it != data.end()) { version = it->second.version; }
+
     data[key] = Entry{
         .value = value,
         .type = "string",
-        .expiry = std::chrono::steady_clock::now() + std::chrono::milliseconds(ms)
+        .expiry = std::chrono::steady_clock::now() + std::chrono::milliseconds(ms),
+        .version = version + 1
     };
-    data[key].version++;
 }
 
 std::string Store::get(const std::string &key) {
