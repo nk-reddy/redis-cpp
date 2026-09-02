@@ -419,7 +419,7 @@ std::string Store::incr(const std::string &key) {
     if (it == data.end()) {
         lock.unlock();
         set(key, "1");
-        return "$-1\r\n";
+        return ":1\r\n";
     }
     if (it->second.type != "string") {
         return "$-1\r\n";
