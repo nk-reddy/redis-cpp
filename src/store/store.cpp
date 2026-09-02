@@ -354,7 +354,23 @@ std::string Store::xrange(const std::string &key, const std::string &start, cons
 std::string Store::xread(const std::vector<std::string> &keys, const std::vector<std::string> &ids, double timeout) {
     if (timeout >= 0) {
         std::unique_lock<std::mutex> lk(mtx);
-        
+        std::vector<std::pair<long long, long long>> requested_ids;
+        for (size_t i = 0; i < keys.size(); i++) {
+            if (ids[i] == "$") {
+                auto it = data.find(keys[i]);
+                if (it == data.end() || 
+                !std::holds_alternative<std::vector<StreamEntry>>(it->second.value)) {
+                    requested_ids.push_back({0, 0});
+                    continue;
+                }
+
+                auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
+                if (stream.empty()) { requested_ids.push_back({0, 0}); }
+                else { requested_ids.push_back(parse_stream_id(stream.back().id)); }
+            }
+            else { requested_ids.push_back(parse_stream_id(ids[i])); }
+        }
+
         auto ready = [&]() {
             for (size_t i = 0; i < keys.size(); i++) {
                 auto it = data.find(keys[i]);
@@ -364,9 +380,8 @@ std::string Store::xread(const std::vector<std::string> &keys, const std::vector
                 auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
                 if (stream.empty()) { continue; }
 
-                auto requested_id = parse_stream_id(ids[i]);
                 auto newest_id = parse_stream_id(stream.back().id);
-                if (newest_id > requested_id) { return true; }
+                if (newest_id > requested_ids[i]) { return true; }
             }
             return false;
         };
