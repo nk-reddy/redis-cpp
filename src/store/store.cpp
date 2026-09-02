@@ -353,23 +353,24 @@ std::string Store::xrange(const std::string &key, const std::string &start, cons
 
 std::string Store::xread(const std::vector<std::string> &keys, const std::vector<std::string> &ids, double timeout) {
     std::vector<std::pair<long long, long long>> requested_ids;
-    for (size_t i = 0; i < keys.size(); i++) {
-        if (ids[i] == "$") {
-            auto it = data.find(keys[i]);
-            if (it == data.end() || 
-            !std::holds_alternative<std::vector<StreamEntry>>(it->second.value)) {
-                requested_ids.push_back({0, 0});
-                continue;
-            }
 
-            auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
-            if (stream.empty()) { requested_ids.push_back({0, 0}); }
-            else { requested_ids.push_back(parse_stream_id(stream.back().id)); }
-        }
-        else { requested_ids.push_back(parse_stream_id(ids[i])); }
-    }
     if (timeout >= 0) {
         std::unique_lock<std::mutex> lk(mtx);
+        for (size_t i = 0; i < keys.size(); i++) {
+            if (ids[i] == "$") {
+                auto it = data.find(keys[i]);
+                if (it == data.end() || 
+                !std::holds_alternative<std::vector<StreamEntry>>(it->second.value)) {
+                    requested_ids.push_back({0, 0});
+                    continue;
+                }
+
+                auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
+                if (stream.empty()) { requested_ids.push_back({0, 0}); }
+                else { requested_ids.push_back(parse_stream_id(stream.back().id)); }
+            }
+            else { requested_ids.push_back(parse_stream_id(ids[i])); }
+        }
 
         auto ready = [&]() {
             for (size_t i = 0; i < keys.size(); i++) {
@@ -390,6 +391,11 @@ std::string Store::xread(const std::vector<std::string> &keys, const std::vector
         else { 
             bool got_ready = cv.wait_for(lk, std::chrono::duration<double, std::milli>(timeout), ready);
             if (!got_ready) { return "*-1\r\n"; }
+        }
+    }
+    else {
+        for (const std::string &id : ids) {
+            requested_ids.push_back(parse_stream_id(id));
         }
     }
 
