@@ -12,8 +12,9 @@ void Store::set(const std::string &key, const std::string &value) {
     data[key] = Entry{
         .value = value,
         .type = "string",
-        .expiry = std::nullopt
+        .expiry = std::nullopt,
     };
+    data[key].version++;
 }
 
 void Store::set_with_expiry(const std::string &key, const std::string &value, int ms) {
@@ -23,6 +24,7 @@ void Store::set_with_expiry(const std::string &key, const std::string &value, in
         .type = "string",
         .expiry = std::chrono::steady_clock::now() + std::chrono::milliseconds(ms)
     };
+    data[key].version++;
 }
 
 std::string Store::get(const std::string &key) {
@@ -61,6 +63,7 @@ std::string Store::rpush(const std::string &key, const std::vector<std::string> 
     for (const std::string &value : values) {
         list.push_back(value);
     }
+    it->second.version++;
     cv.notify_one();
     return ":" + std::to_string(list.size()) + "\r\n";
 }
@@ -118,6 +121,7 @@ std::string Store::lpush(const std::string &key, const std::vector<std::string> 
     for (const std::string &value : values) {
         list.insert(list.begin(), value);
     }
+    it->second.version++;
     cv.notify_one();
     return ":" + std::to_string(list.size()) + "\r\n";
 }
@@ -165,6 +169,7 @@ std::string Store::lpop(const std::string &key, int n) {
     for (const std::string &str: to_remove) {
         response += ("$" + std::to_string(str.length()) + "\r\n" + str + "\r\n");
     }
+    it->second.version++;
     return response;
 }
 
@@ -200,6 +205,7 @@ std::string Store::blpop(const std::string &key, double timeout) {
     auto &list = std::get<std::vector<std::string>>(it->second.value);
     std::string start = list[0];
     list.erase(list.begin());
+    it->second.version++;
     return "*2\r\n$" + std::to_string(key.length()) + "\r\n" + key + "\r\n$" + std::to_string(start.length()) + "\r\n" + start + "\r\n";
 }
 
@@ -237,6 +243,7 @@ std::string Store::xadd(const std::string &key, std::string id, const std::vecto
     it = data.find(key);
     auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
     stream.push_back(entry);
+    it->second.version++;
     cv.notify_all();
     return "$" + std::to_string(id.length()) + "\r\n" + id + "\r\n";
 }
@@ -435,9 +442,19 @@ std::string Store::incr(const std::string &key) {
             return "-ERR value is not an integer or out of range\r\n";
         }
 
+        it->second.version++;
         converted++;
         val = std::to_string(converted);
         return ":" + val + "\r\n";
     }
     catch (const std::exception &) { return "-ERR value is not an integer or out of range\r\n"; }
+}
+
+long long Store::get_version(const std::string &key) {
+    std::unique_lock<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) {
+        return 0;
+    }
+    return it->second.version;
 }

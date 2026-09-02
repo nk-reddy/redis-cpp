@@ -4,6 +4,7 @@
 #include <string>
 #include <vector> 
 #include <algorithm>
+#include <unordered_set>
 
 std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store) {
     std::string response; 
@@ -48,9 +49,6 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     }
     else if (command == "incr") {
         response = handle_command_incr(data, store);
-    }
-    else if (command == "watch") {
-        response = handle_command_watch(data, store);
     }
     else {
         response = handle_command_default();
@@ -213,11 +211,4 @@ std::string handle_command_incr(const std::vector<std::string>& args, Store &sto
         return "-ERR invalid arguments\r\n";
     }
     return store.incr(args[1]);  
-}
-
-std::string handle_command_watch(const std::vector<std::string>& args, Store &store) {
-    if (args.size() != 2) {
-        return "-ERR invalid arguments\r\n";
-    }
-    return "+OK\r\n";  
 }

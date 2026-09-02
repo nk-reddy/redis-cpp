@@ -24,6 +24,7 @@ struct Entry {
     RedisValue value;
     std::string type;
     std::optional<std::chrono::steady_clock::time_point> expiry;
+    unsigned long long version = 0;
 };
 
 class Store {
@@ -49,4 +50,5 @@ class Store {
     std::string xrange(const std::string &key, const std::string &start, const std::string &stop);
     std::string xread(const std::vector<std::string> &keys, const std::vector<std::string> &ids, double timeout = -1);
     std::string incr(const std::string &key);
+    long long get_version(const std::string &key);
 };
