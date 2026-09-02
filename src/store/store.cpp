@@ -422,7 +422,7 @@ std::string Store::incr(const std::string &key) {
         return ":1\r\n";
     }
     if (it->second.type != "string") {
-        return "$-1\r\n";
+        return "-ERR value is not an integer or out of range\r\n";
     }
 
     std::string &val = std::get<std::string>(it->second.value);
@@ -431,7 +431,7 @@ std::string Store::incr(const std::string &key) {
     size_t pos;
     long long converted = std::stoll(val, &pos);
     if (pos != val.size()) {
-        return "$-1\r\n";
+        return "-ERR value is not an integer or out of range\r\n";
     }
 
     converted++;
