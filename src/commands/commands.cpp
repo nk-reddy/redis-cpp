@@ -1,12 +1,13 @@
 #include "commands.h"
 #include "../store/store.h"
+#include "../store/helpers.h"
 
 #include <string>
 #include <vector> 
 #include <algorithm>
 #include <unordered_set>
 
-std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store) {
+std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server) {
     std::string response; 
     if (command == "echo") {
         response = handle_command_echo(data);
@@ -49,6 +50,9 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     }
     else if (command == "incr") {
         response = handle_command_incr(data, store);
+    }
+    else if (command == "info") {
+        response = handle_command_info(data, server);
     }
     else {
         response = handle_command_default();
@@ -211,4 +215,9 @@ std::string handle_command_incr(const std::vector<std::string>& args, Store &sto
         return "-ERR invalid arguments\r\n";
     }
     return store.incr(args[1]);  
+}
+
+std::string handle_command_info(const std::vector<std::string>& args, ServerState &server) {
+    std::string response = "role:" + server.get_role();
+    return encode_resp_string(response);
 }

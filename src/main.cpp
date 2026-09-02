@@ -1,5 +1,6 @@
 #include "client.h"
 #include "store/store.h"
+#include "server/server.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -58,12 +59,12 @@ int main(int argc, char **argv) {
   int client_addr_len = sizeof(client_addr);
   std::cout << "Waiting for a client to connect...\n";
 
-  // You can use print statements as follows for debugging, they'll be visible when running tests.
-  std::cout << "Logs from your program will appear here!\n";
   Store store;
+  ServerState state("master");
+
   while (true) {
     int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-    std::thread(handle_client, client_fd, std::ref(store)).detach();
+    std::thread(handle_client, client_fd, std::ref(store), std::ref(state)).detach();
   }
 
   close(server_fd);

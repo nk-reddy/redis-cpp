@@ -13,7 +13,7 @@
 #include <queue>
 #include <unordered_set>
 
-void handle_client(int client_fd, Store &store) {
+void handle_client(int client_fd, Store &store, ServerState &server) {
   char buffer[1024];
 
   // state variables SPECIFIC to the client
@@ -75,7 +75,7 @@ void handle_client(int client_fd, Store &store) {
                         response = "*" + std::to_string(queuedCommands.size()) + "\r\n";
                         while (!queuedCommands.empty()) {
                             std::vector<std::string> currentCommand = queuedCommands.front();
-                            std::string currentResponse = handle_command(currentCommand[0], currentCommand, store);
+                            std::string currentResponse = handle_command(currentCommand[0], currentCommand, store, server);
                             response += currentResponse;
                             queuedCommands.pop();
                         }
@@ -104,7 +104,7 @@ void handle_client(int client_fd, Store &store) {
                     }
                     response = "+OK\r\n";
                 }
-                else { response = handle_command(data[0], data, store); }
+                else { response = handle_command(data[0], data, store, server); }
                 break;
         }
     }
