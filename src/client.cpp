@@ -48,7 +48,7 @@ void handle_client(int client_fd, Store &store) {
                     while (!queuedCommands.empty()) {
                         std::vector<std::string> currentCommand = queuedCommands.front();
                         std::string currentResponse = handle_command(currentCommand[0], currentCommand, store);
-                        response += "+" + currentResponse + "\r\n";
+                        response += currentResponse;
                         queuedCommands.pop();
                     }
                 }
