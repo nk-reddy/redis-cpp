@@ -414,9 +414,11 @@ std::string Store::xread(const std::vector<std::string> &keys, const std::vector
 }
 
 std::string Store::incr(const std::string &key) {
-    std::lock_guard<std::mutex> lock(mtx);
+    std::unique_lock<std::mutex> lock(mtx);
     auto it = data.find(key);
     if (it == data.end()) {
+        lock.unlock();
+        set(key, "1");
         return "$-1\r\n";
     }
     if (it->second.type != "string") {
