@@ -124,7 +124,7 @@ std::string handle_command_xread(const std::vector<std::string>& args, Store &st
 
     std::string type = args[1];
     std::transform(type.begin(), type.end(), type.begin(), ::tolower);
-    if (type != "streams" || type != "block") {
+    if (type != "streams" && type != "block") {
         return "-ERR invalid arguments\r\n";
     }
 
@@ -147,7 +147,7 @@ std::string handle_command_xread(const std::vector<std::string>& args, Store &st
         return "-ERR invalid arguments\r\n";
     }
     for (size_t i = 4; i < args.size(); ++i) {
-        size_t mid = args.size() / 2 + 2;
+        size_t mid = args.size() / 2 + 1;
         if (i <= mid) { keys.push_back(args[i]); }
         else { ids.push_back(args[i]); }
     }
