@@ -39,6 +39,12 @@ void handle_client(int client_fd, Store &store) {
         in_multi = true;
         response = "+OK\r\n";
     }
+    // case - command unwatch 
+    else if (data[0] == "unwatch")
+    {
+        watchedKeys = {};
+        response = "+OK\r\n";
+    }
     // case - command is NOT multi
     else 
     {
@@ -58,6 +64,7 @@ void handle_client(int client_fd, Store &store) {
                         }
                     }
 
+                    watchedKeys = {};
                     if (watched_change)
                     {
                         response = "*-1\r\n";
@@ -77,6 +84,7 @@ void handle_client(int client_fd, Store &store) {
                 else if (data[0] == "discard")
                 {
                     in_multi = false;
+                    watchedKeys = {};
                     queuedCommands = {};
                     response = "+OK\r\n";
                 }
