@@ -428,13 +428,16 @@ std::string Store::incr(const std::string &key) {
     std::string &val = std::get<std::string>(it->second.value);
 
     // make sure that the string is a number
-    size_t pos;
-    long long converted = std::stoll(val, &pos);
-    if (pos != val.size()) {
-        return "-ERR value is not an integer or out of range\r\n";
-    }
+    try {
+        size_t pos;
+        long long converted = std::stoll(val, &pos);
+        if (pos != val.size()) {
+            return "-ERR value is not an integer or out of range\r\n";
+        }
 
-    converted++;
-    val = std::to_string(converted);
-    return ":" + val + "\r\n";
+        converted++;
+        val = std::to_string(converted);
+        return ":" + val + "\r\n";
+    }
+    catch (const std::exception &) { return "-ERR value is not an integer or out of range\r\n"; }
 }
