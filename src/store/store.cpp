@@ -237,6 +237,7 @@ std::string Store::xadd(const std::string &key, std::string id, const std::vecto
     it = data.find(key);
     auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
     stream.push_back(entry);
+    cv.notify_all();
     return "$" + std::to_string(id.length()) + "\r\n" + id + "\r\n";
 }
 
@@ -350,7 +351,33 @@ std::string Store::xrange(const std::string &key, const std::string &start, cons
     return response;
 }
 
-std::string Store::xread(const std::vector<std::string> &keys, const std::vector<std::string> &ids) {
+std::string Store::xread(const std::vector<std::string> &keys, const std::vector<std::string> &ids, double timeout) {
+    if (timeout >= 0) {
+        std::unique_lock<std::mutex> lk(mtx);
+        
+        auto ready = [&]() {
+            for (size_t i = 0; i < keys.size(); i++) {
+                auto it = data.find(keys[i]);
+                if (it == data.end()) { continue; }
+                if (!std::holds_alternative<std::vector<StreamEntry>>(it->second.value)) { continue; }
+
+                auto &stream = std::get<std::vector<StreamEntry>>(it->second.value);
+                if (stream.empty()) { continue; }
+
+                auto requested_id = parse_stream_id(ids[i]);
+                auto newest_id = parse_stream_id(stream.back().id);
+                if (newest_id > requested_id) { return true; }
+            }
+            return false;
+        };
+
+        if (timeout == 0) { cv.wait(lk, ready); }
+        else { 
+            bool got_ready = cv.wait_for(lk, std::chrono::duration<double, std::milli>(timeout), ready);
+            if (!got_ready) { return "*-1\r\n"; }
+        }
+    }
+
     std::string response = "*" + std::to_string(keys.size()) + "\r\n";
     for (size_t i = 0; i < keys.size(); i++) {
         std::pair<long long, long long> id_val = parse_stream_id(ids[i]);

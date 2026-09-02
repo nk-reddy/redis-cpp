@@ -124,16 +124,33 @@ std::string handle_command_xread(const std::vector<std::string>& args, Store &st
 
     std::string type = args[1];
     std::transform(type.begin(), type.end(), type.begin(), ::tolower);
-    if (type != "streams") {
+    if (type != "streams" || type != "block") {
         return "-ERR invalid arguments\r\n";
     }
 
     std::vector<std::string> keys {};
     std::vector<std::string> ids {};
-    for (size_t i = 2; i < args.size(); ++i) {
-        size_t mid = args.size() / 2;
+
+    if (type == "streams") {
+        for (size_t i = 2; i < args.size(); ++i) {
+            size_t mid = args.size() / 2;
+            if (i <= mid) { keys.push_back(args[i]); }
+            else { ids.push_back(args[i]); }
+        }
+        return store.xread(keys, ids);
+    }
+
+    // blocking scenario
+    std::string check = args[3];
+    std::transform(check.begin(), check.end(), check.begin(), ::tolower);
+    if (check != "streams") {
+        return "-ERR invalid arguments\r\n";
+    }
+    for (size_t i = 4; i < args.size(); ++i) {
+        size_t mid = args.size() / 2 + 2;
         if (i <= mid) { keys.push_back(args[i]); }
         else { ids.push_back(args[i]); }
     }
-    return store.xread(keys, ids);
+
+    return store.xread(keys, ids, std::stod(args[2]));
 }
