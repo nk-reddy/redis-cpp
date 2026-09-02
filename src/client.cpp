@@ -52,6 +52,12 @@ void handle_client(int client_fd, Store &store) {
                         queuedCommands.pop();
                     }
                 }
+                else if (data[0] == "discard")
+                {
+                    in_multi = false;
+                    queuedCommands = {};
+                    response = "+OK\r\n";
+                }
                 else 
                 {
                     queuedCommands.push(data);
@@ -60,6 +66,7 @@ void handle_client(int client_fd, Store &store) {
                 break;
             case false: // case - prior command has multi OFF
                 if (data[0] == "exec") { response = "-ERR EXEC without MULTI\r\n"; }
+                else if (data[0] == "discard") { response = "-ERR DISCARD without MULTI\r\n"; }
                 else { response = handle_command(data[0], data, store); }
                 break;
         }
