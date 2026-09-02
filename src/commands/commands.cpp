@@ -5,6 +5,56 @@
 #include <vector> 
 #include <algorithm>
 
+std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store) {
+    std::string response; 
+    if (command == "echo") {
+        response = handle_command_echo(data);
+    }
+    else if (command == "set") {
+        response = handle_command_set(data, store);
+    }
+    else if (command == "get") {
+        response = handle_command_get(data, store);
+    }
+    else if (command == "rpush") {
+        response = handle_command_rpush(data, store);
+    }
+    else if (command == "lrange") {
+        response = handle_command_lrange(data, store);
+    }
+    else if (command == "lpush") {
+        response = handle_command_lpush(data, store);
+    }
+    else if (command == "llen") {
+        response = handle_command_llen(data, store);
+    }
+    else if (command == "lpop") {
+        response = handle_command_lpop(data, store);
+    }
+    else if (command == "blpop") {
+        response = handle_command_blpop(data, store);
+    }
+    else if (command == "type") {
+        response = handle_command_type(data, store);
+    }
+    else if (command == "xadd") {
+        response = handle_command_xadd(data, store);
+    }
+    else if (command == "xrange") {
+        response = handle_command_xrange(data, store);
+    }
+    else if (command == "xread") {
+        response = handle_command_xread(data, store);
+    }
+    else if (command == "incr") {
+        response = handle_command_incr(data, store);
+    }
+    else {
+        response = handle_command_default();
+    }
+    return response;
+}
+
 std::string handle_command_default() {
     return "+PONG\r\n";
 }

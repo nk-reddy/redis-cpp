@@ -1,6 +1,7 @@
 #include "client.h"
 #include "commands/commands.h"
 #include "store/store.h"
+#include "store/helpers.h"
 
 #include <string>
 #include <cctype>
@@ -9,11 +10,13 @@
 #include <unistd.h>
 #include <vector>
 #include <algorithm>
-
-std::vector<std::string> parse_resp(std::string input);
+#include <queue>
 
 void handle_client(int client_fd, Store &store) {
   char buffer[1024];
+  bool in_multi = false;
+  std::queue<std::vector<std::string>> queuedCommands {};
+
   while (1) {
     int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
     if (bytes_received <= 0) {break;}
@@ -24,78 +27,46 @@ void handle_client(int client_fd, Store &store) {
         break;
     }
     std::transform(data[0].begin(), data[0].end(), data[0].begin(), ::tolower);
-    std::string response = "";
+    std::string response;
 
-    // handle the commands by case
-    if (data[0] == "echo") {
-        response = handle_command_echo(data);
+    // case - command multi
+    if (data[0] == "multi") 
+    {
+        in_multi = true;
+        response = "+OK\r\n";
     }
-    else if (data[0] == "set") {
-        response = handle_command_set(data, store);
+    // case - command is NOT multi
+    else 
+    {
+        switch (in_multi) 
+        {
+            case true: // case - prior command has multi ON
+                if (data[0] == "exec") 
+                {
+                    in_multi = false;
+                    response = "*" + std::to_string(queuedCommands.size()) + "\r\n";
+                    while (!queuedCommands.empty()) {
+                        std::vector<std::string> currentCommand = queuedCommands.front();
+                        std::string currentResponse = handle_command(currentCommand[0], currentCommand, store);
+                        response += encode_resp_string(currentResponse);
+                        queuedCommands.pop();
+                    }
+                }
+                else 
+                {
+                    queuedCommands.push(data);
+                    response = "+QUEUED\r\n";
+                }
+                break;
+            case false: // case - prior command has multi OFF
+                if (data[0] == "exec") { response = "-ERR EXEC without MULTI\r\n"; }
+                else { response = handle_command(data[0], data, store); }
+                break;
+        }
     }
-    else if (data[0] == "get") {
-        response = handle_command_get(data, store);
-    }
-    else if (data[0] == "rpush") {
-        response = handle_command_rpush(data, store);
-    }
-    else if (data[0] == "lrange") {
-        response = handle_command_lrange(data, store);
-    }
-    else if (data[0] == "lpush") {
-        response = handle_command_lpush(data, store);
-    }
-    else if (data[0] == "llen") {
-        response = handle_command_llen(data, store);
-    }
-    else if (data[0] == "lpop") {
-        response = handle_command_lpop(data, store);
-    }
-    else if (data[0] == "blpop") {
-        response = handle_command_blpop(data, store);
-    }
-    else if (data[0] == "type") {
-        response = handle_command_type(data, store);
-    }
-    else if (data[0] == "xadd") {
-        response = handle_command_xadd(data, store);
-    }
-    else if (data[0] == "xrange") {
-        response = handle_command_xrange(data, store);
-    }
-    else if (data[0] == "xread") {
-        response = handle_command_xread(data, store);
-    }
-    else if (data[0] == "incr") {
-        response = handle_command_incr(data, store);
-    }
-    else {
-        response = handle_command_default();
-    }
+
+    // send response back to the client
     send(client_fd, response.data(), response.length(), 0);
   }
   close(client_fd);
-}
-
-std::vector<std::string> parse_resp(std::string input) {
-    size_t pos = 1;
-    std::vector<std::string> elems;
-
-    size_t end = input.find("\r\n", pos);
-    int nelems = std::stoi(input.substr(pos, end - pos));
-    if (nelems <= 0) {
-        return elems;
-    }
-
-    // reach the first data val past the '$'
-    pos = end + 3;
-    for (size_t i = 0; i < nelems; i++) {
-        size_t end = input.find("\r\n", pos);
-        int bytes = std::stoi(input.substr(pos, end - pos));
-        pos = end + 2;
-        elems.push_back(input.substr(pos, bytes));
-        pos += (bytes + 3);
-    }
-
-    return elems;
 }

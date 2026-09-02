@@ -3,6 +3,29 @@
 #include <limits>
 #include <vector>
 
+std::vector<std::string> parse_resp(std::string input) {
+    size_t pos = 1;
+    std::vector<std::string> elems;
+
+    size_t end = input.find("\r\n", pos);
+    int nelems = std::stoi(input.substr(pos, end - pos));
+    if (nelems <= 0) {
+        return elems;
+    }
+
+    // reach the first data val past the '$'
+    pos = end + 3;
+    for (size_t i = 0; i < nelems; i++) {
+        size_t end = input.find("\r\n", pos);
+        int bytes = std::stoi(input.substr(pos, end - pos));
+        pos = end + 2;
+        elems.push_back(input.substr(pos, bytes));
+        pos += (bytes + 3);
+    }
+
+    return elems;
+}
+
 std::pair<long long, long long> parse_stream_id(const std::string &id, bool is_start) {
     size_t dash = id.find("-");
     long long ms = 0;

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector> 
 
+std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store);
 std::string handle_command_default();
 std::string handle_command_echo(const std::vector<std::string>& args);
 std::string handle_command_set(const std::vector<std::string>& args, Store &store);
