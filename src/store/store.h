@@ -48,4 +48,5 @@ class Store {
     void generate_stream_id(const std::string &key, std::string &id);
     std::string xrange(const std::string &key, const std::string &start, const std::string &stop);
     std::string xread(const std::vector<std::string> &keys, const std::vector<std::string> &ids, double timeout = -1);
+    std::string incr(const std::string &key);
 };

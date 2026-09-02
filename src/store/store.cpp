@@ -412,3 +412,27 @@ std::string Store::xread(const std::vector<std::string> &keys, const std::vector
     }
     return response;
 }
+
+std::string Store::incr(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) {
+        return "$-1\r\n";
+    }
+    if (it->second.type != "string") {
+        return "$-1\r\n";
+    }
+
+    std::string &val = std::get<std::string>(it->second.value);
+
+    // make sure that the string is a number
+    size_t pos;
+    long long converted = std::stoll(val, &pos);
+    if (pos != val.size()) {
+        return "$-1\r\n";
+    }
+
+    converted++;
+    val = std::to_string(converted);
+    return ":" + val + "\r\n";
+}

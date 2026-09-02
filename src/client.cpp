@@ -66,6 +66,9 @@ void handle_client(int client_fd, Store &store) {
     else if (data[0] == "xread") {
         response = handle_command_xread(data, store);
     }
+    else if (data[0] == "incr") {
+        response = handle_command_incr(data, store);
+    }
     else {
         response = handle_command_default();
     }

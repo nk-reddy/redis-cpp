@@ -154,3 +154,10 @@ std::string handle_command_xread(const std::vector<std::string>& args, Store &st
 
     return store.xread(keys, ids, std::stod(args[2]));
 }
+
+std::string handle_command_incr(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 2) {
+        return "-ERR invalid arguments\r\n";
+    }
+    return store.incr(args[1]);  
+}
