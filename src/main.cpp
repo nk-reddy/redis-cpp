@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
   // add custom port configurability
   int port = 6379;
-  if (argc == 3 && std::string(argv[1]) == "--port") {
+  if (argc >= 3 && std::string(argv[1]) == "--port") {
     port = std::stoi(argv[2]);
   }
   server_addr.sin_port = htons(port);
@@ -61,6 +61,11 @@ int main(int argc, char **argv) {
 
   Store store;
   ServerState state;
+
+  // add server replica configurability
+  if (argc >= 5 && std::string(argv[3]) == "--replicaof") {
+    state.set_role("slave");
+  }
 
   while (true) {
     int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);

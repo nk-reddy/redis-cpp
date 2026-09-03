@@ -235,16 +235,24 @@ std::string handle_command_info(const std::vector<std::string>& args, ServerStat
 
     std::string response = "";
     if (req_all || req_server) {
-
+        response += "# Server\r\n";
+        response += encode_resp_string("redis_version:" + server.get_redis_version());
+        response += "\r\n";
     }
     if (req_all || req_server) {
-
+        response += "# Clients\r\n";
+        response += encode_resp_string("connected_clients:" + server.get_connected_clients());
+        response += "\r\n";
     }
     if (req_all || req_server) {
-
+        response += "# Memory\r\n";
+        response += encode_resp_string("used_memory:" + server.get_used_memory());
+        response += "\r\n";
     }
     if (req_all || req_server) {
-
+        response += "# Replication\r\n";
+        response += encode_resp_string("role:" + server.get_role());
+        response += "\r\n";
     }
 
     return response;

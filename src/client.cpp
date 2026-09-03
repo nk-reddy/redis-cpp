@@ -14,14 +14,15 @@
 #include <unordered_set>
 
 void handle_client(int client_fd, Store &store, ServerState &server) {
-  char buffer[1024];
+    server.add_connected_client();
+    char buffer[1024];
 
-  // state variables SPECIFIC to the client
-  bool in_multi = false;
-  std::queue<std::vector<std::string>> queuedCommands {};
-  std::unordered_map<std::string, long long> watchedKeys {};
+    // state variables SPECIFIC to the client
+    bool in_multi = false;
+    std::queue<std::vector<std::string>> queuedCommands {};
+    std::unordered_map<std::string, long long> watchedKeys {};
 
-  while (1) {
+    while (1) {
     int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
     if (bytes_received <= 0) { break; }
 
@@ -111,6 +112,6 @@ void handle_client(int client_fd, Store &store, ServerState &server) {
 
     // send response back to the client
     send(client_fd, response.data(), response.length(), 0);
-  }
-  close(client_fd);
+    }
+    close(client_fd);
 }
