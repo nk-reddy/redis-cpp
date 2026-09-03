@@ -218,7 +218,7 @@ std::string handle_command_incr(const std::vector<std::string>& args, Store &sto
 }
 
 std::string handle_command_info(const std::vector<std::string>& args, ServerState &server) {
-    bool req_all, req_server, req_clients, req_memory, req_replication = false;
+    bool req_all = false, req_server = false, req_clients = false, req_memory = false, req_replication = false;
     if (args.size() > 2) { return "-ERR invalid arguments\r\n"; }
     else if (args.size() == 1) { req_all = true; }
     else {
@@ -236,24 +236,24 @@ std::string handle_command_info(const std::vector<std::string>& args, ServerStat
     std::string response = "";
     if (req_all || req_server) {
         response += "# Server\r\n";
-        response += encode_resp_string("redis_version:" + server.get_redis_version());
+        response += "redis_version:" + server.get_redis_version();
         response += "\r\n";
     }
-    if (req_all || req_server) {
+    if (req_all || req_clients) {
         response += "# Clients\r\n";
-        response += encode_resp_string("connected_clients:" + server.get_connected_clients());
+        response += "connected_clients:" + server.get_connected_clients();
         response += "\r\n";
     }
-    if (req_all || req_server) {
+    if (req_all || req_memory) {
         response += "# Memory\r\n";
-        response += encode_resp_string("used_memory:" + server.get_used_memory());
+        response += "used_memory:" + server.get_used_memory();
         response += "\r\n";
     }
-    if (req_all || req_server) {
+    if (req_all || req_replication) {
         response += "# Replication\r\n";
-        response += encode_resp_string("role:" + server.get_role());
+        response += "role:" + server.get_role();
         response += "\r\n";
     }
 
-    return response;
+    return encode_resp_string(response);
 }
