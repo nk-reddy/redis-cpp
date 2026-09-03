@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   server_addr.sin_port = htons(port);
 
   if (bind(server_fd, (struct sockaddr *) &server_addr, sizeof(server_addr)) != 0) {
-    std::cerr << "Failed to bind to port 6379\n";
+    std::cerr << "Failed to bind to port " + std::to_string(port) +"\n";
     return 1;
   }
 
@@ -65,6 +65,33 @@ int main(int argc, char **argv) {
   // add server replica configurability
   if (argc >= 5 && std::string(argv[3]) == "--replicaof") {
     state.set_role("slave");
+
+    // parse the master server
+    std::string master_info = std::string(argv[4]);
+    size_t split = master_info.find(" ");
+    std::string host = master_info.substr(0, split);
+    std::string port_str = master_info.substr(split + 1);
+
+    // define the server address
+    addrinfo hints{};
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    addrinfo *result = nullptr;
+    if (getaddrinfo(host.c_str(), port_str.c_str(), &hints, &result) != 0) {
+      std::cerr << "Failed to bind to master port " + port_str + "\n";
+      return 1;
+    }
+
+    int master_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (connect(master_fd, result->ai_addr, result->ai_addrlen) != 0) {
+      std::cerr << "Failed to connect to master port " + port_str + "\n";
+      return 1;
+    }
+    // 1 - send a PING
+    const char *message = "*1\r\n$4\r\nPING\r\n";
+    send(master_fd, message, strlen(message), 0);
+    close(master_fd);
   }
 
   while (true) {
