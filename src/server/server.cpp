@@ -23,3 +23,11 @@ void ServerState::set_role(std::string role) {
 void ServerState::add_connected_client() {
     connected_clients++;
 }
+
+std::string ServerState::get_master_replid() {
+    return master_replid;
+}
+
+long long ServerState::get_master_repl_offset() {
+    return master_repl_offset;
+}

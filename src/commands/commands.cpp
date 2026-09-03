@@ -241,18 +241,19 @@ std::string handle_command_info(const std::vector<std::string>& args, ServerStat
     }
     if (req_all || req_clients) {
         response += "# Clients\r\n";
-        response += "connected_clients:" + server.get_connected_clients();
+        response += "connected_clients:" + std::to_string(server.get_connected_clients());
         response += "\r\n";
     }
     if (req_all || req_memory) {
         response += "# Memory\r\n";
-        response += "used_memory:" + server.get_used_memory();
+        response += "used_memory:" + std::to_string(server.get_used_memory());
         response += "\r\n";
     }
     if (req_all || req_replication) {
         response += "# Replication\r\n";
-        response += "role:" + server.get_role();
-        response += "\r\n";
+        response += "role:" + server.get_role() + "\r\n";
+        response += "master_repl_offset:" + std::to_string(server.get_master_repl_offset()) + "\r\n";
+        response += "master_replid:" + server.get_master_replid();
     }
 
     return encode_resp_string(response);
