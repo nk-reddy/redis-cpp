@@ -8,7 +8,8 @@
 #include <unordered_set>
 #include <sys/socket.h>
 
-std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server) {
+std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &rawCommand) {
+    // handle the command
     std::string response; 
     if (command == "echo") {
         response = handle_command_echo(data);
@@ -61,7 +62,27 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     else {
         response = handle_command_default();
     }
+
+    // propogate the command to any replicas
+    if (modifying_command(command)) {
+        propogate_command_to_replicas(rawCommand, server);
+    }
+
     return response;
+}
+
+bool modifying_command(const std::string &command) {
+    static const std::unordered_set<std::string> write_commands = {
+        "set",
+        "incr",
+        "rpush",
+        "lpush",
+        "lpop",
+        "blpop",
+        "xadd"
+    };
+
+    return write_commands.contains(command);
 }
 
 std::string handle_command_default() {
@@ -269,7 +290,11 @@ std::string handle_command_replconf() {
 
 void handle_command_psync(int client_fd, const std::vector<std::string>& args, ServerState &server) {
     std::string response = "";
-    if (args.size() < 3) { response = "-ERR invalid arguments\r\n"; }
+    if (args.size() < 3) { 
+        response = "-ERR invalid arguments\r\n"; 
+        send(client_fd, response.data(), response.length(), 0);
+        return;
+    }
 
     // replica is connecting for the first time
     if (args[1] == "?" && args[2] == "-1") {
@@ -281,8 +306,17 @@ void handle_command_psync(int client_fd, const std::vector<std::string>& args, S
         std::string empty_rdb_binary = parse_hex_to_binary(empty_rdb_hex);
         std::string rdb_response = "$" + std::to_string(empty_rdb_binary.length()) + "\r\n" + empty_rdb_binary;
         send(client_fd, rdb_response.data(), rdb_response.length(), 0);
+
+        // update our internal state of replicas
+        server.add_connected_replica(client_fd);
         return;
     }
 
     send(client_fd, response.data(), response.length(), 0);
+}
+
+void propogate_command_to_replicas(const std::string &rawCommand, ServerState &server) {
+    for (int replica_fd : server.get_connected_replicas()) {
+        send(replica_fd, rawCommand.data(), rawCommand.length(), 0);
+    }
 }

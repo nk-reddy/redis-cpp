@@ -35,3 +35,11 @@ std::string ServerState::get_master_replid() {
 long long ServerState::get_master_repl_offset() {
     return master_repl_offset;
 }
+
+void ServerState::add_connected_replica(int client_fd) {
+    replica_fds.insert(client_fd);
+}
+
+std::unordered_set<int> ServerState::get_connected_replicas() {
+    return replica_fds;
+}

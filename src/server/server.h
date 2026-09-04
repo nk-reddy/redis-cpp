@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_set>
 
 class ServerState 
 {
@@ -12,6 +13,8 @@ class ServerState
     int connected_clients = 0;
     long long used_memory = 0;
     long long master_repl_offset = 0;
+
+    std::unordered_set<int> replica_fds {};
 
     public:
     ServerState() = default;
@@ -32,4 +35,7 @@ class ServerState
 
     void set_role(std::string role);
     void add_connected_client();
+    void add_connected_replica(int client_fd);
+
+    std::unordered_set<int> get_connected_replicas();
 };

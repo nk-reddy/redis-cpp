@@ -83,7 +83,7 @@ void handle_client(int client_fd, Store &store, ServerState &server) {
                         response = "*" + std::to_string(queuedCommands.size()) + "\r\n";
                         while (!queuedCommands.empty()) {
                             std::vector<std::string> currentCommand = queuedCommands.front();
-                            std::string currentResponse = handle_command(currentCommand[0], currentCommand, store, server);
+                            std::string currentResponse = handle_command(currentCommand[0], currentCommand, store, server, ret);
                             response += currentResponse;
                             queuedCommands.pop();
                         }
@@ -112,7 +112,7 @@ void handle_client(int client_fd, Store &store, ServerState &server) {
                     }
                     response = "+OK\r\n";
                 }
-                else { response = handle_command(data[0], data, store, server); }
+                else { response = handle_command(data[0], data, store, server, ret); }
                 break;
         }
     }
