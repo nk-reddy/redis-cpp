@@ -55,7 +55,15 @@ std::string encode_resp_string(const std::string &str) {
 }
 
 std::string parse_hex_to_binary(const std::string &hex_str) {
-    unsigned long val = std::stoll(hex_str, nullptr, 16);
-    std::string binary_str = std::format("{:b}", val);
-    return binary_str;
+    std::string result;
+    if (hex_str.length() % 2 != 0 ) { return ""; }
+
+    result.reserve(hex_str.length() / 2);
+    for (size_t i = 0; i < hex_str.length(); i += 2) {
+        std::string byte_str = hex_str.substr(i, 2);
+        unsigned int value = std::stoul(byte_str, nullptr, 16);
+        result.push_back(static_cast<char>(value));
+    }
+    
+    return result;
 }
