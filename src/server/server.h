@@ -7,7 +7,7 @@ class ServerState
     private:
     std::string role = "master";
     std::string redis_version = "7.2.4";
-    std::string master_replid = "?";
+    std::string master_replid = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb";
     int port;
     int connected_clients = 0;
     long long used_memory = 0;

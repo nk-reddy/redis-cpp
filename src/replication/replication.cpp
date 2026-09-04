@@ -99,7 +99,7 @@ bool ReplicaSocket::handshake_with_master(ServerState &state) {
     if (response != "+OK\r\n") { return false; }
 
     // 3 - send PSYNC
-    std::vector<std::string> psync_vec{"PSYNC", state.get_master_replid(), std::to_string(state.get_master_repl_offset())};
+    std::vector<std::string> psync_vec{"PSYNC", "?", "-1"};
     std::string psync_message = encode_resp_array(psync_vec);
 
     if (send(master_fd, psync_message.c_str(), psync_message.length(), 0) < 0) {
