@@ -2,6 +2,7 @@
 
 #include <limits>
 #include <vector>
+#include <format>
 
 std::vector<std::string> parse_resp(std::string input) {
     size_t pos = 1;
@@ -51,4 +52,10 @@ std::string encode_resp_array(const std::vector<std::string> &values) {
 
 std::string encode_resp_string(const std::string &str) {
     return "$" + std::to_string(str.length()) + "\r\n" + str + "\r\n";
+}
+
+std::string parse_hex_to_binary(const std::string &hex_str) {
+    unsigned long val = std::stoll(hex_str, nullptr, 16);
+    std::string binary_str = std::format("{:b}", val);
+    return binary_str;
 }

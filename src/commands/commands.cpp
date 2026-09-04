@@ -6,6 +6,7 @@
 #include <vector> 
 #include <algorithm>
 #include <unordered_set>
+#include <sys/socket.h>
 
 std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server) {
     std::string response; 
@@ -56,9 +57,6 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     }
     else if (command == "replconf") {
         response = handle_command_replconf();
-    }
-    else if (command == "psync") {
-        response = handle_command_psync(server);
     }
     else {
         response = handle_command_default();
@@ -269,6 +267,22 @@ std::string handle_command_replconf() {
     return "+OK\r\n";
 }
 
-std::string handle_command_psync(ServerState &server) {
-    return "+FULLRESYNC " + server.get_master_replid() + " 0\r\n";
+void handle_command_psync(int client_fd, const std::vector<std::string>& args, ServerState &server) {
+    std::string response = "";
+    if (args.size() < 3) { response = "-ERR invalid arguments\r\n"; }
+
+    // replica is connecting for the first time
+    if (args[1] == "?" && args[2] == "-1") {
+        response = "+FULLRESYNC " + server.get_master_replid() + " 0\r\n";
+        send(client_fd, response.data(), response.length(), 0);
+
+        // send the empty RDB file
+        std::string empty_rdb_hex = "524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2";
+        std::string empty_rdb_binary = parse_hex_to_binary(empty_rdb_hex);
+        std::string rdb_response = "$" + std::to_string(empty_rdb_binary.length()) + "\r\n" + empty_rdb_binary;
+        send(client_fd, rdb_response.data(), rdb_response.length(), 0);
+        return;
+    }
+
+    send(client_fd, response.data(), response.length(), 0);
 }

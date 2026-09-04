@@ -34,6 +34,13 @@ void handle_client(int client_fd, Store &store, ServerState &server) {
     std::transform(data[0].begin(), data[0].end(), data[0].begin(), ::tolower);
     std::string response;
 
+    // case - command psync (multiple sends)
+    if (data[0] == "psync")
+    {
+        handle_command_psync(client_fd, data, server);
+        continue;
+    }
+
     // case - command multi
     if (data[0] == "multi") 
     {
