@@ -23,3 +23,5 @@ std::string handle_command_xrange(const std::vector<std::string>& args, Store &s
 std::string handle_command_xread(const std::vector<std::string>& args, Store &store);
 std::string handle_command_incr(const std::vector<std::string>& args, Store &store);
 std::string handle_command_info(const std::vector<std::string>& args, ServerState &server);
+std::string handle_command_replconf();
+std::string handle_command_psync(ServerState &server);

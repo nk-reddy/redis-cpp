@@ -54,6 +54,12 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     else if (command == "info") {
         response = handle_command_info(data, server);
     }
+    else if (command == "replconf") {
+        response = handle_command_replconf();
+    }
+    else if (command == "psync") {
+        response = handle_command_psync(server);
+    }
     else {
         response = handle_command_default();
     }
@@ -257,4 +263,12 @@ std::string handle_command_info(const std::vector<std::string>& args, ServerStat
     }
 
     return encode_resp_string(response);
+}
+
+std::string handle_command_replconf() {
+    return "+OK\r\n";
+}
+
+std::string handle_command_psync(ServerState &server) {
+    return "+FULLRESYNC " + server.get_master_replid() + " 0\r\n";
 }
