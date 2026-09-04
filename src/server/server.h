@@ -11,7 +11,7 @@ class ServerState
     int port;
     int connected_clients = 0;
     long long used_memory = 0;
-    long long master_repl_offset = -1;
+    long long master_repl_offset = 0;
 
     public:
     ServerState() = default;
