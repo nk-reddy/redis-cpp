@@ -1,6 +1,7 @@
 #include "replication.h"
 #include "../store/helpers.h"
 
+#include <cstring>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
@@ -83,7 +84,7 @@ bool ReplicaSocket::handshake_with_master(ServerState &state) {
         return false;
     }
 
-    int bytes_received = recv(master_fd, buffer, sizeof(buffer), 0);
+    bytes_received = recv(master_fd, buffer, sizeof(buffer), 0);
     if (bytes_received <= 0) { return false; }
     response = std::string(buffer, bytes_received);
     if (response != "+OK\r\n") { return false; }
@@ -92,7 +93,7 @@ bool ReplicaSocket::handshake_with_master(ServerState &state) {
         return false;
     }
 
-    int bytes_received = recv(master_fd, buffer, sizeof(buffer), 0);
+    bytes_received = recv(master_fd, buffer, sizeof(buffer), 0);
     if (bytes_received <= 0) { return false; }
     response = std::string(buffer, bytes_received);
     if (response != "+OK\r\n") { return false; }
@@ -104,8 +105,8 @@ bool ReplicaSocket::handshake_with_master(ServerState &state) {
     if (send(master_fd, psync_message.c_str(), psync_message.length(), 0) < 0) {
         return false;
     }
-    
-    int bytes_received = recv(master_fd, buffer, sizeof(buffer), 0);
+
+    bytes_received = recv(master_fd, buffer, sizeof(buffer), 0);
     if (bytes_received <= 0) { return false; }
 
     return true;
