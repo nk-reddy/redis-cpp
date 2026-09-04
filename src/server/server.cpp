@@ -8,6 +8,10 @@ std::string ServerState::get_redis_version() {
     return redis_version;
 }
 
+int ServerState::get_port() {
+    return port;
+}
+
 int ServerState::get_connected_clients() {
     return connected_clients;
 }

@@ -1,6 +1,7 @@
 #include "client.h"
 #include "store/store.h"
 #include "server/server.h"
+#include "replication/replication.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -18,6 +19,28 @@ int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
+
+  // parse the CLI arguments
+  bool custom_port, is_replica; 
+  int custom_port_index, master_server_index; 
+  for (size_t i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == "--port") {
+      if (i == (argc - 1)) {
+        std::cerr << "Invalid CLI arguments\n";
+        return 1;
+      }
+      custom_port = true;
+      custom_port_index = i + 1;
+    }
+    else if (std::string(argv[i]) == "--replicaof") {
+      if (i == (argc - 1)) {
+        std::cerr << "Invalid CLI arguments\n";
+        return 1;
+      }
+      is_replica = true;
+      master_server_index = i + 1;
+    }
+  }
 
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0) {
@@ -39,8 +62,8 @@ int main(int argc, char **argv) {
 
   // add custom port configurability
   int port = 6379;
-  if (argc >= 3 && std::string(argv[1]) == "--port") {
-    port = std::stoi(argv[2]);
+  if (custom_port) {
+    port = std::stoi(argv[custom_port_index]);
   }
   server_addr.sin_port = htons(port);
 
@@ -60,38 +83,32 @@ int main(int argc, char **argv) {
   std::cout << "Waiting for a client to connect...\n";
 
   Store store;
-  ServerState state;
+  ServerState state(port);
+  ReplicaSocket replica;
 
   // add server replica configurability
-  if (argc >= 5 && std::string(argv[3]) == "--replicaof") {
+  if (is_replica) {
     state.set_role("slave");
 
     // parse the master server
-    std::string master_info = std::string(argv[4]);
+    std::string master_info = std::string(argv[master_server_index]);
     size_t split = master_info.find(" ");
-    std::string host = master_info.substr(0, split);
+    std::string host_str = master_info.substr(0, split);
     std::string port_str = master_info.substr(split + 1);
 
-    // define the server address
-    addrinfo hints{};
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
+    // define a replica socket
+    ReplicaSocket replica(host_str, port_str);
 
-    addrinfo *result = nullptr;
-    if (getaddrinfo(host.c_str(), port_str.c_str(), &hints, &result) != 0) {
-      std::cerr << "Failed to bind to master port " + port_str + "\n";
-      return 1;
+    // connect to the master server
+    if (!replica.connect_to_master()) {
+      std::cerr << "Failed to connect to master server...\n";
+      return -1;
     }
 
-    int master_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (connect(master_fd, result->ai_addr, result->ai_addrlen) != 0) {
-      std::cerr << "Failed to connect to master port " + port_str + "\n";
-      return 1;
+    if (!replica.handshake_with_master(state)) {
+      std:: cerr << "Failed handshake with master server...\n";
+      return -1;
     }
-    // 1 - send a PING
-    const char *message = "*1\r\n$4\r\nPING\r\n";
-    send(master_fd, message, strlen(message), 0);
-    close(master_fd);
   }
 
   while (true) {
