@@ -77,3 +77,40 @@ void ServerState::request_ack_from_replicas() {
 void ServerState::update_replica_offset(int fd, long long offset) {
     replica_fds[fd] = offset;
 }
+
+void ServerState::set_config_file_param(std::string param, std::string value) {
+    if (param == "--dir") {
+        config_file.dir = value;
+        return;
+    }
+    if (param == "--dbfilename") {
+        config_file.db_filename = value;
+        return;
+    }
+    if (param == "--appendonly") {
+        config_file.appendonly = value;
+        return;
+    }
+    if (param == "--appenddirname") {
+        config_file.appenddirname = value;
+        return;
+    }
+    if (param == "--appendfilename") {
+        config_file.appendfilename = value;
+        return;
+    }
+    if (param == "--appendfsync") {
+        config_file.appendfsync = value;
+        return;
+    }
+}
+
+std::string ServerState::get_config_file_param (std::string param) {
+    if (param == "dir") return config_file.dir;
+    if (param == "dbfilename") return config_file.db_filename;
+    if (param == "appendonly") return config_file.appendonly;
+    if (param == "appenddirname") return config_file.appenddirname;
+    if (param == "appendfilename") return config_file.appendfilename;
+    if (param == "appendfsync") return config_file.appendfsync;
+    return "";
+}

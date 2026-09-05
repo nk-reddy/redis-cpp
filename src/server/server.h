@@ -36,7 +36,7 @@ class ServerState
 
     bool writes_since_last_wait = false;
 
-    FileConfig rdb_file;
+    FileConfig config_file;
 
     public:
     ServerState() = default;
@@ -73,22 +73,9 @@ class ServerState
     bool get_writes_since_last_wait() { return writes_since_last_wait; }
     void set_writes_since_last_wait(bool update) { writes_since_last_wait = update; }
 
-    void set_rdb_file (std::string dir, std::string dirname) {
-        this->rdb_file.dir = dir;
-        this->rdb_file.db_filename = dirname;
-    }
-
-    std::string get_rdb_file_param (std::string param) {
-        if (param == "dir") return rdb_file.dir;
-        if (param == "dbfilename") return rdb_file.db_filename;
-        if (param == "appendonly") return rdb_file.appendonly;
-        if (param == "appenddirname") return rdb_file.appenddirname;
-        if (param == "appendfilename") return rdb_file.appendfilename;
-        if (param == "appendfsync") return rdb_file.appendfsync;
-        return "";
-    }
-
+    void set_config_file_param(std::string param, std::string value);
+    std::string get_config_file_param (std::string param);
     std::string get_rdb_file_path () {
-        return rdb_file.dir + "/" + rdb_file.db_filename;
+        return config_file.dir + "/" + config_file.db_filename;
     }
 };

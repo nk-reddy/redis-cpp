@@ -384,7 +384,7 @@ std::string handle_command_config(const std::vector<std::string>& args, ServerSt
 
     if (type != "get") { return "-ERR invalid arguments\r\n"; }
 
-    std::string val = server.get_rdb_file_param(param);
+    std::string val = server.get_config_file_param(param);
     if (val == "") { return "-ERR invalid arguments\r\n"; }
 
     std::vector<std::string> response {param, val};

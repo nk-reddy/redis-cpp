@@ -96,9 +96,13 @@ int main(int argc, char **argv) {
     std::thread(handle_client, replica.get_master_fd(), std::ref(store), std::ref(state), true).detach();
   }
 
+  // update file config state
+  for (const auto &[flag, value] : args) {
+    state.set_config_file_param(flag, value);
+  }
+
   // add rdb file configurability
   if (args.contains("--dir") && args.contains("--dbfilename")) {
-    state.set_rdb_file(std::string(args["--dir"]), std::string(args["--dbfilename"]));
     store.read_rdb_file(state.get_rdb_file_path());
   }
 
