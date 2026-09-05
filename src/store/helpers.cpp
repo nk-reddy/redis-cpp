@@ -84,7 +84,7 @@ ParseResult parse_one_resp_array(const std::string &input) {
     for (int i = 0; i < count; ++i) {
         // parse each element
         // parse the bulk string (header)
-        if (pos >= input.size() || input[pos] != '*') { return result; }
+        if (pos >= input.size() || input[pos] != '$') { return result; }
 
         line_end = input.find("\r\n", pos);
         if (line_end == std::string::npos) { return result; }
