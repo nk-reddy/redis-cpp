@@ -6,7 +6,7 @@
 #include <string>
 #include <vector> 
 
-std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &rawCommand = "");
+std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &rawCommand = "", int client_fd = -1);
 std::string handle_command_default();
 std::string handle_command_echo(const std::vector<std::string>& args);
 std::string handle_command_set(const std::vector<std::string>& args, Store &store);
@@ -23,7 +23,7 @@ std::string handle_command_xrange(const std::vector<std::string>& args, Store &s
 std::string handle_command_xread(const std::vector<std::string>& args, Store &store);
 std::string handle_command_incr(const std::vector<std::string>& args, Store &store);
 std::string handle_command_info(const std::vector<std::string>& args, ServerState &server);
-std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server);
+std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server, int client_fd);
 std::string handle_command_wait(const std::vector<std::string>& args, ServerState &server);
 
 // special commands

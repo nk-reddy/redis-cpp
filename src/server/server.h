@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include <unordered_set>
+#include <unordered_map>
 #include <mutex>
+#include <vector>
 #include <condition_variable>
 
 class ServerState 
@@ -16,10 +17,12 @@ class ServerState
     long long used_memory = 0;
     long long master_repl_offset = 0;
 
-    std::unordered_set<int> replica_fds {};
+    std::unordered_map<int, long long> replica_fds;
 
     std::mutex replica_mutex;
     std::condition_variable replica_cv;
+
+    bool writes_since_last_wait = false;
 
     public:
     ServerState() = default;
@@ -43,9 +46,16 @@ class ServerState
     void add_connected_replica(int client_fd);
     void add_offset(int bytes);
 
-    std::unordered_set<int> get_connected_replicas();
+    std::vector<int> ServerState::get_connected_replicas();
     int get_num_connected_replicas();
+    int get_num_connected_replicas_with_offset(long long offset);
 
     std::mutex& get_replica_mutex() { return replica_mutex; };
     std::condition_variable& get_replica_cv() { return replica_cv; }
+
+    void request_ack_from_replicas();
+    void update_replica_offset(int fd, long long offset);
+
+    bool get_writes_since_last_wait() { return writes_since_last_wait; }
+    void set_writes_since_last_wait(bool update) { writes_since_last_wait = update; }
 };

@@ -11,7 +11,7 @@
 #include <condition_variable>
 #include <chrono>
 
-std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &rawCommand) {
+std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &raw_command, int client_fd) {
     // handle the command
     std::string response; 
     if (command == "echo") {
@@ -60,7 +60,7 @@ std::string handle_command(const std::string &command, const std::vector<std::st
         response = handle_command_info(data, server);
     }
     else if (command == "replconf") {
-        response = handle_command_replconf(data, server);
+        response = handle_command_replconf(data, server, client_fd);
     }
     else if (command == "wait") {
         response = handle_command_wait(data, server);
@@ -71,7 +71,9 @@ std::string handle_command(const std::string &command, const std::vector<std::st
 
     // propagate the command to any replicas
     if (modifying_command(command) && server.get_role() == "master") {
-        propagate_command_to_replicas(rawCommand, server);
+        propagate_command_to_replicas(raw_command, server);
+        server.add_offset(raw_command.length());
+        server.set_writes_since_last_wait(true);
     }
 
     return response;
@@ -290,14 +292,21 @@ std::string handle_command_info(const std::vector<std::string>& args, ServerStat
     return encode_resp_string(response);
 }
 
-std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server) {
-    if (args.size() > 1) {
+std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server, int client_fd) {
+    if (args.size() >= 3) {
         std::string type = args[1];
         std::transform(type.begin(), type.end(), type.begin(), ::tolower);
         if (type == "getack")
         {
             std::vector<std::string> ack = {"REPLCONF", "ACK", std::to_string(server.get_master_repl_offset())};
             return encode_resp_array(ack);
+        }
+        if (type == "ack")
+        {
+            long long offset = std::stoll(args[2]);
+            server.update_replica_offset(client_fd, offset);
+            server.get_replica_cv().notify_all();
+            return "";
         }
     }
     return "+OK\r\n";
@@ -341,15 +350,21 @@ std::string handle_command_wait(const std::vector<std::string>& args, ServerStat
     if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
     int min_replicas = std::stoi(args[1]);
     int timeout = std::stoi(args[2]);
+    long long required_offset = server.get_master_repl_offset();
 
+    if (server.get_writes_since_last_wait()) {
+        server.request_ack_from_replicas();
+        server.set_writes_since_last_wait(false);
+    }
+    
     std::unique_lock<std::mutex> lock(server.get_replica_mutex());
     server.get_replica_cv().wait_for(
         lock,
         std::chrono::milliseconds(timeout),
         [&]() {
-            return server.get_num_connected_replicas() >= min_replicas;
+            return server.get_num_connected_replicas_with_offset(required_offset) >= min_replicas;
         }
     );
 
-    return ":" + std::to_string(server.get_num_connected_replicas()) + "\r\n";
+    return ":" + std::to_string(server.get_num_connected_replicas_with_offset(required_offset)) + "\r\n";
 }

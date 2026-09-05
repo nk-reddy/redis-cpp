@@ -91,7 +91,7 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
                                 response = "*" + std::to_string(queued_commands.size()) + "\r\n";
                                 while (!queued_commands.empty()) {
                                     QueuedCommand current_command = queued_commands.front();
-                                    std::string current_response = handle_command(current_command.args[0], current_command.args, store, server, current_command.raw_command);
+                                    std::string current_response = handle_command(current_command.args[0], current_command.args, store, server, current_command.raw_command, client_fd);
                                     response += current_response;
                                     queued_commands.pop();
                                 }
@@ -120,7 +120,7 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
                             }
                             response = "+OK\r\n";
                         }
-                        else { response = handle_command(data[0], data, store, server, parsed.raw_command); }
+                        else { response = handle_command(data[0], data, store, server, parsed.raw_command, client_fd); }
                         break;
                 }
             }
@@ -131,7 +131,7 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
                 server.add_offset(parsed.raw_command.length());
                 if (data[0] != "replconf") { continue; }
             }
-            send(client_fd, response.data(), response.length(), 0);
+            if (!response.empty()) { send(client_fd, response.data(), response.length(), 0); }
         }
     }
     
