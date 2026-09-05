@@ -114,3 +114,11 @@ std::string ServerState::get_config_file_param (std::string param) {
     if (param == "appendfsync") return config_file.appendfsync;
     return "";
 }
+
+void ServerState::create_append_only_dir() {
+    // find the dir path
+    std::filesystem::path append_dir_path = config_file.dir + "/" + config_file.appenddirname;
+
+    // create the dir if it doesn't exist
+    std::filesystem::create_directory(append_dir_path);
+}

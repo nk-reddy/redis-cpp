@@ -106,6 +106,11 @@ int main(int argc, char **argv) {
     store.read_rdb_file(state.get_rdb_file_path());
   }
 
+  // handle the append-only directory
+  if (state.append_only_on()) {
+    state.create_append_only_dir();
+  }
+
   while (true) {
     int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
     std::thread(handle_client, client_fd, std::ref(store), std::ref(state), false).detach();

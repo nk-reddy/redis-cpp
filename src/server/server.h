@@ -6,6 +6,8 @@
 #include <vector>
 #include <condition_variable>
 #include <filesystem>
+#include <algorithm>
+#include <cctype>
 
 struct FileConfig 
 {
@@ -75,7 +77,11 @@ class ServerState
 
     void set_config_file_param(std::string param, std::string value);
     std::string get_config_file_param (std::string param);
-    std::string get_rdb_file_path () {
-        return config_file.dir + "/" + config_file.db_filename;
+    std::string get_rdb_file_path () { return config_file.dir + "/" + config_file.db_filename; }
+    bool append_only_on() { 
+        std::string val = config_file.appendonly;
+        std::transform(val.begin(), val.end(), val.begin(), ::tolower);
+        return val == "yes"; 
     }
+    void create_append_only_dir();
 };
