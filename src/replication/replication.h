@@ -26,4 +26,6 @@ class ReplicaSocket
 
     int get_master_fd() const;
     void set_master(const std::string &host, const std::string &port);
+
+    std::string recv_line(int fd);
 };

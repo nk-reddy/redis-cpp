@@ -67,7 +67,7 @@ bool ReplicaSocket::handshake_with_master(ServerState &state) {
         return false;
     }
 
-    char buffer[128];
+    char buffer[1024];
     int bytes_received = recv(master_fd, buffer, sizeof(buffer), 0);
     if (bytes_received <= 0) { return false; }
 
@@ -103,12 +103,41 @@ bool ReplicaSocket::handshake_with_master(ServerState &state) {
     std::vector<std::string> psync_vec{"PSYNC", "?", "-1"};
     std::string psync_message = encode_resp_array(psync_vec);
 
-    if (send(master_fd, psync_message.c_str(), psync_message.length(), 0) < 0) {
-        return false;
+    if (send(master_fd, psync_message.c_str(), psync_message.length(), 0) < 0) { return false; }
+
+    // receive FULLRESYNC & RDB file 
+    std::string full_resync = recv_line(master_fd);
+    if (!full_resync.starts_with("+FULLRESYNC")) { return false; }
+
+    std::string rdb_header = recv_line(master_fd);
+    if (rdb_header.empty() || rdb_header[0] != '$') { return false; }
+
+    size_t rdb_size = std::stoul(rdb_header.substr(1));
+    size_t remaining = rdb_size;
+    while (remaining > 0) {
+        size_t amount = std::min(remaining, sizeof(buffer));
+
+        int n = recv(master_fd, buffer, amount, 0);
+        if (n <= 0) { return false; }
+        remaining -= n;
     }
 
-    bytes_received = recv(master_fd, buffer, sizeof(buffer), 0);
-    if (bytes_received <= 0) { return false; }
-
     return true;
+}
+
+std::string recv_line(int fd) {
+    std::string line; 
+    char c; 
+
+    while (true) {
+        int n = recv(fd, &c, 1, 0);
+        if (n <= 0) { return ""; }
+
+        line.push_back(c);
+        if (line.length() >= 2 && line[line.length() - 2] == '\r' && line[line.length() - 1] == '\n') {
+            break;
+        }
+    }
+
+    return line;
 }

@@ -21,7 +21,8 @@ int main(int argc, char **argv) {
   std::cerr << std::unitbuf;
 
   // parse the CLI arguments
-  bool custom_port, is_replica; 
+  bool custom_port = false;
+  bool is_replica = false; 
   int custom_port_index, master_server_index; 
   for (size_t i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == "--port") {
