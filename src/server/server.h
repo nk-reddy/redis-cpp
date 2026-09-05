@@ -8,8 +8,13 @@
 
 struct RDBFile 
 {
-    std::string dir;
-    std::string db_filename;
+    std::string dir = "";
+    std::string db_filename = "";
+
+    std::string appendonly = "no";
+    std::string appenddirname = "appendonlydir";
+    std::string appendfilename = "appendonly.aof";
+    std::string appendfsync = "everysec";
 };
 
 class ServerState 
@@ -73,8 +78,12 @@ class ServerState
     }
 
     std::string get_rdb_file_param (std::string param) {
-        if (param == "dir") { return rdb_file.dir; }
-        else if (param == "dbfilename") { return rdb_file.db_filename; }
+        if (param == "dir") return rdb_file.dir;
+        if (param == "dbfilename") return rdb_file.db_filename;
+        if (param == "appendonly") return rdb_file.appendonly;
+        if (param == "appenddirname") return rdb_file.appenddirname;
+        if (param == "appendfilename") return rdb_file.appendfilename;
+        if (param == "appendfsync") return rdb_file.appendfsync;
         return "";
     }
 
