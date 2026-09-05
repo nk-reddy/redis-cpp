@@ -121,7 +121,12 @@ void ServerState::handle_append_only() {
     std::filesystem::path dir_path = std::filesystem::path(config_file.dir) / config_file.appenddirname;
     std::filesystem::create_directories(dir_path);
 
-    // 2 - create empty AOF file inside the dir
-    std::filesystem::path file_path = dir_path / (config_file.appendfilename + ".1.incr.aof");
-    std::ofstream file(file_path, std::ios::app);
+    // 2 - create AOF file inside the dir
+    std::filesystem::path aof_file_path = dir_path / (config_file.appendfilename + ".1.incr.aof");
+    std::ofstream aof_file(aof_file_path, std::ios::app);
+
+    // 3 - create manifest file inside the dir
+    std::filesystem::path manifest_file_path = dir_path / (config_file.appendfilename + ".manifest");
+    std::ofstream manifest_file(manifest_file_path);
+    manifest_file << "file " + aof_file_path.filename().string() + " seq 1 type i\n";
 }
