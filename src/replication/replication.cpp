@@ -112,7 +112,3 @@ bool ReplicaSocket::handshake_with_master(ServerState &state) {
 
     return true;
 }
-
-void ReplicaSocket::listen_for_master_commands(Store &store, ServerState &server) {
-    handle_client(master_fd, store, server, true);
-}

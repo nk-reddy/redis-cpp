@@ -26,6 +26,4 @@ class ReplicaSocket
 
     int get_master_fd() const;
     void set_master(const std::string &host, const std::string &port);
-
-    void listen_for_master_commands(Store &store, ServerState &server);
 };

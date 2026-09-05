@@ -111,12 +111,12 @@ int main(int argc, char **argv) {
     }
 
     // listen for commands from the master
-    std::thread(&ReplicaSocket::listen_for_master_commands, &replica, std::ref(store), std::ref(state)).detach();
+    std::thread(handle_client, replica.get_master_fd(), std::ref(store), std::ref(state), true).detach();
   }
 
   while (true) {
     int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-    std::thread(handle_client, client_fd, std::ref(store), std::ref(state)).detach();
+    std::thread(handle_client, client_fd, std::ref(store), std::ref(state), false).detach();
   }
 
   close(server_fd);
