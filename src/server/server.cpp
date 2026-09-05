@@ -2,6 +2,7 @@
 #include "../store/helpers.h"
 
 #include <sys/socket.h>
+#include <fstream>
 
 std::string ServerState::get_role() {
     return role;
@@ -115,10 +116,12 @@ std::string ServerState::get_config_file_param (std::string param) {
     return "";
 }
 
-void ServerState::create_append_only_dir() {
-    // find the dir path
-    std::filesystem::path append_dir_path = config_file.dir + "/" + config_file.appenddirname;
+void ServerState::handle_append_only() {
+    // 1 - create the dir if it doesn't exist
+    std::filesystem::path dir_path = std::filesystem::path(config_file.dir) / config_file.appenddirname;
+    std::filesystem::create_directories(dir_path);
 
-    // create the dir if it doesn't exist
-    std::filesystem::create_directory(append_dir_path);
+    // 2 - create empty AOF file inside the dir
+    std::filesystem::path file_path = dir_path / (config_file.appendfilename + ".1.incr.aof");
+    std::ofstream file(file_path, std::ios::app);
 }

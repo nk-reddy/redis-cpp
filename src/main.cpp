@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 
   // handle the append-only directory
   if (state.append_only_on()) {
-    state.create_append_only_dir();
+    state.handle_append_only();
   }
 
   while (true) {

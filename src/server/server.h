@@ -83,5 +83,5 @@ class ServerState
         std::transform(val.begin(), val.end(), val.begin(), ::tolower);
         return val == "yes"; 
     }
-    void create_append_only_dir();
+    void handle_append_only();
 };
