@@ -6,9 +6,9 @@
 #include <vector>
 #include <condition_variable>
 
-struct RDBFile 
+struct FileConfig 
 {
-    std::string dir = "";
+    std::string dir = ".";
     std::string db_filename = "";
 
     std::string appendonly = "no";
@@ -35,7 +35,7 @@ class ServerState
 
     bool writes_since_last_wait = false;
 
-    RDBFile rdb_file;
+    FileConfig rdb_file;
 
     public:
     ServerState() = default;
