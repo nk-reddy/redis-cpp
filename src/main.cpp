@@ -2,6 +2,7 @@
 #include "store/store.h"
 #include "server/server.h"
 #include "replication/replication.h"
+#include "cli/cli-parser.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -21,45 +22,7 @@ int main(int argc, char **argv) {
   std::cerr << std::unitbuf;
 
   // parse the CLI arguments
-  bool custom_port = false;
-  bool is_replica = false; 
-  bool rdb_file_dir = false;
-  bool rdb_file_dirname = false;
-  int custom_port_index, master_server_index, rdb_file_dir_index, rdb_file_dirname_index; 
-  for (size_t i = 1; i < argc; ++i) {
-    if (std::string(argv[i]) == "--port") {
-      if (i == (argc - 1)) {
-        std::cerr << "Invalid CLI arguments\n";
-        return 1;
-      }
-      custom_port = true;
-      custom_port_index = i + 1;
-    }
-    else if (std::string(argv[i]) == "--replicaof") {
-      if (i == (argc - 1)) {
-        std::cerr << "Invalid CLI arguments\n";
-        return 1;
-      }
-      is_replica = true;
-      master_server_index = i + 1;
-    }
-    else if (std::string(argv[i]) == "--dir") {
-      if (i == (argc - 1)) {
-        std::cerr << "Invalid CLI arguments\n";
-        return 1;
-      }
-      rdb_file_dir = true;
-      rdb_file_dir_index = i + 1;
-    }
-    else if (std::string(argv[i]) == "--dbfilename") {
-      if (i == (argc - 1)) {
-        std::cerr << "Invalid CLI arguments\n";
-        return 1;
-      }
-      rdb_file_dirname = true;
-      rdb_file_dirname_index = i + 1;
-    }
-  }
+  auto args = parse_args(argc, argv);
 
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0) {
@@ -81,8 +44,8 @@ int main(int argc, char **argv) {
 
   // add custom port configurability
   int port = 6379;
-  if (custom_port) {
-    port = std::stoi(argv[custom_port_index]);
+  if (args.contains("--port")) {
+    port = std::stoi(args["--port"]);
   }
   server_addr.sin_port = htons(port);
 
@@ -106,11 +69,11 @@ int main(int argc, char **argv) {
   ReplicaSocket replica;
 
   // add server replica configurability
-  if (is_replica) {
+  if (args.contains("--replicaof")) {
     state.set_role("slave");
 
     // parse the master server
-    std::string master_info = std::string(argv[master_server_index]);
+    std::string master_info = args["--replicaof"];
     size_t split = master_info.find(" ");
     std::string host_str = master_info.substr(0, split);
     std::string port_str = master_info.substr(split + 1);
@@ -134,8 +97,8 @@ int main(int argc, char **argv) {
   }
 
   // add rdb file configurability
-  if (rdb_file_dir && rdb_file_dirname) {
-    state.set_rdb_file(std::string(argv[rdb_file_dir_index]), std::string(argv[rdb_file_dirname_index]));
+  if (args.contains("--dir") && args.contains("--dbfilename")) {
+    state.set_rdb_file(std::string(args["--dir"]), std::string(args["--dbfilename"]));
     store.read_rdb_file(state.get_rdb_file_path());
   }
 
