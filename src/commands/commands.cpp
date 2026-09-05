@@ -65,6 +65,9 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     else if (command == "wait") {
         response = handle_command_wait(data, server);
     }
+    else if (command == "config") {
+        response = handle_command_config(data, server);
+    }
     else {
         response = handle_command_default();
     }
