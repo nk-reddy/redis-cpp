@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <unordered_set>
 #include <sys/socket.h>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 
 std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &rawCommand) {
     // handle the command
@@ -318,6 +321,7 @@ void handle_command_psync(int client_fd, const std::vector<std::string>& args, S
 
         // update our internal state of replicas
         server.add_connected_replica(client_fd);
+        server.get_replica_cv().notify_all();
         return;
     }
 
@@ -328,4 +332,21 @@ void propagate_command_to_replicas(const std::string &rawCommand, ServerState &s
     for (int replica_fd : server.get_connected_replicas()) {
         send(replica_fd, rawCommand.data(), rawCommand.length(), 0);
     }
+}
+
+std::string handle_command_wait(const std::vector<std::string>& args, ServerState &server) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
+    int min_replicas = std::stoi(args[1]);
+    int timeout = std::stoi(args[2]);
+
+    std::unique_lock<std::mutex> lock(server.get_replica_mutex());
+    server.get_replica_cv().wait_for(
+        lock,
+        std::chrono::milliseconds(timeout),
+        [&]() {
+            return server.get_num_connected_replicas() >= min_replicas;
+        }
+    );
+
+    return ":" + std::to_string(server.get_num_connected_replicas()) + "\r\n";
 }

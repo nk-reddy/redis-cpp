@@ -2,6 +2,8 @@
 
 #include <string>
 #include <unordered_set>
+#include <mutex>
+#include <condition_variable>
 
 class ServerState 
 {
@@ -15,6 +17,9 @@ class ServerState
     long long master_repl_offset = 0;
 
     std::unordered_set<int> replica_fds {};
+
+    std::mutex replica_mutex;
+    std::condition_variable replica_cv;
 
     public:
     ServerState() = default;
@@ -39,4 +44,8 @@ class ServerState
     void add_offset(int bytes);
 
     std::unordered_set<int> get_connected_replicas();
+    int get_num_connected_replicas();
+
+    std::mutex& get_replica_mutex() { return replica_mutex; };
+    std::condition_variable& get_replica_cv() { return replica_cv; }
 };
