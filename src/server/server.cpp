@@ -43,3 +43,7 @@ void ServerState::add_connected_replica(int client_fd) {
 std::unordered_set<int> ServerState::get_connected_replicas() {
     return replica_fds;
 }
+
+void ServerState::add_offset(int bytes) {
+    master_repl_offset += bytes;
+}

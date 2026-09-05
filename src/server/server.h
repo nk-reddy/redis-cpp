@@ -36,6 +36,7 @@ class ServerState
     void set_role(std::string role);
     void add_connected_client();
     void add_connected_replica(int client_fd);
+    void add_offset(int bytes);
 
     std::unordered_set<int> get_connected_replicas();
 };

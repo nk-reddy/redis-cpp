@@ -126,7 +126,11 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
             }
 
             // send response back to the client
-            if (is_master_connection && data[0] != "replconf") { continue; }
+            if (is_master_connection) 
+            {
+                server.add_offset(parsed.raw_command.length());
+                if (data[0] != "replconf") { continue; }
+            }
             send(client_fd, response.data(), response.length(), 0);
         }
     }
