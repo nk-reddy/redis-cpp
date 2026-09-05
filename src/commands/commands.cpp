@@ -57,7 +57,7 @@ std::string handle_command(const std::string &command, const std::vector<std::st
         response = handle_command_info(data, server);
     }
     else if (command == "replconf") {
-        response = handle_command_replconf();
+        response = handle_command_replconf(data, server);
     }
     else {
         response = handle_command_default();
@@ -284,7 +284,16 @@ std::string handle_command_info(const std::vector<std::string>& args, ServerStat
     return encode_resp_string(response);
 }
 
-std::string handle_command_replconf() {
+std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server) {
+    if (args.size() > 1) {
+        std::string type = args[1];
+        std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+        if (type == "getack")
+        {
+            std::vector<std::string> ack = {"REPLCONF", "ACK", std::to_string(server.get_master_repl_offset())};
+            return encode_resp_array(ack);
+        }
+    }
     return "+OK\r\n";
 }
 

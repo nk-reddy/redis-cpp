@@ -8,7 +8,6 @@
 #include <cstring>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <vector>
 #include <algorithm>
 #include <queue>
 #include <unordered_set>
@@ -20,8 +19,8 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
 
     // state variables SPECIFIC to the client
     bool in_multi = false;
-    std::queue<std::vector<std::string>> queuedCommands {};
-    std::unordered_map<std::string, long long> watchedKeys {};
+    std::queue<QueuedCommand> queued_commands {};
+    std::unordered_map<std::string, long long> watched_keys {};
 
     while (1) 
     {
@@ -59,7 +58,7 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
             // case - command unwatch 
             else if (data[0] == "unwatch")
             {
-                watchedKeys = {};
+                watched_keys = {};
                 response = "+OK\r\n";
             }
             // case - command is NOT multi
@@ -74,41 +73,41 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
                             bool watched_change = false;
 
                             // determine if any watched keys were touched
-                            for (const auto &[key, version] : watchedKeys) {
+                            for (const auto &[key, version] : watched_keys) {
                                 if (store.get_version(key) != version) {
                                     watched_change = true;
                                     break;
                                 }
                             }
 
-                            watchedKeys = {};
+                            watched_keys = {};
                             if (watched_change)
                             {
                                 response = "*-1\r\n";
-                                queuedCommands = {};
+                                queued_commands = {};
                             }
                             else 
                             {
-                                response = "*" + std::to_string(queuedCommands.size()) + "\r\n";
-                                while (!queuedCommands.empty()) {
-                                    std::vector<std::string> currentCommand = queuedCommands.front();
-                                    std::string currentResponse = handle_command(currentCommand[0], currentCommand, store, server, parsed.raw_command);
-                                    response += currentResponse;
-                                    queuedCommands.pop();
+                                response = "*" + std::to_string(queued_commands.size()) + "\r\n";
+                                while (!queued_commands.empty()) {
+                                    QueuedCommand current_command = queued_commands.front();
+                                    std::string current_response = handle_command(current_command.args[0], current_command.args, store, server, current_command.raw_command);
+                                    response += current_response;
+                                    queued_commands.pop();
                                 }
                             }
                         }
                         else if (data[0] == "discard")
                         {
                             in_multi = false;
-                            watchedKeys = {};
-                            queuedCommands = {};
+                            watched_keys = {};
+                            queued_commands = {};
                             response = "+OK\r\n";
                         }
                         else if (data[0] == "watch") { response = "-ERR WATCH inside MULTI is not allowed\r\n"; }
                         else 
                         {
-                            queuedCommands.push(data);
+                            queued_commands.push({data, parsed.raw_command});
                             response = "+QUEUED\r\n";
                         }
                         break;
@@ -117,7 +116,7 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
                         else if (data[0] == "discard") { response = "-ERR DISCARD without MULTI\r\n"; }
                         else if (data[0] == "watch") {
                             for (size_t i = 1; i < data.size(); ++i) {
-                                watchedKeys[data[i]] = store.get_version(data[i]);
+                                watched_keys[data[i]] = store.get_version(data[i]);
                             }
                             response = "+OK\r\n";
                         }
@@ -128,9 +127,7 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
 
             // send response back to the client
             if (!is_master_connection) { send(client_fd, response.data(), response.length(), 0); }
-        
         }
-        
     }
     
     close(client_fd);
