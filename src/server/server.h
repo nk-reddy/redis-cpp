@@ -5,10 +5,11 @@
 #include <mutex>
 #include <vector>
 #include <condition_variable>
+#include <filesystem>
 
 struct FileConfig 
 {
-    std::string dir = ".";
+    std::string dir = std::filesystem::current_path().string();
     std::string db_filename = "";
 
     std::string appendonly = "no";
