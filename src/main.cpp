@@ -136,6 +136,7 @@ int main(int argc, char **argv) {
   // add rdb file configurability
   if (rdb_file_dir && rdb_file_dirname) {
     state.set_rdb_file(std::string(argv[rdb_file_dir_index]), std::string(argv[rdb_file_dirname_index]));
+    store.read_rdb_file(state.get_rdb_file_path());
   }
 
   while (true) {

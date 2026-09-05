@@ -77,4 +77,8 @@ class ServerState
         else if (param == "dbfilename") { return rdb_file.db_filename; }
         return "";
     }
+
+    std::string get_rdb_file_path () {
+        return rdb_file.dir + "/" + rdb_file.db_filename;
+    }
 };

@@ -35,7 +35,7 @@ class Store {
 
     public:
     void set(const std::string &key, const std::string &value);
-    void set_with_expiry(const std::string &key, const std::string &value, int ms);
+    void set_with_expiry(const std::string &key, const std::string &value, long long ms);
     std::string get(const std::string &key);
     std::string rpush(const std::string &key, const std::vector<std::string> &values);
     std::string lrange(const std::string &key, const std::string &start, const std::string &stop);
@@ -51,4 +51,7 @@ class Store {
     std::string xread(const std::vector<std::string> &keys, const std::vector<std::string> &ids, double timeout = -1);
     std::string incr(const std::string &key);
     long long get_version(const std::string &key);
+
+    void read_rdb_file(const std::string &file_path);
+    std::vector<std::string> get_keys();
 };

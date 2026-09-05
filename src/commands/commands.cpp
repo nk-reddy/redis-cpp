@@ -68,6 +68,9 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     else if (command == "config") {
         response = handle_command_config(data, server);
     }
+    else if (command == "keys") {
+        response = handle_command_keys(data, store);
+    }
     else {
         response = handle_command_default();
     }
@@ -125,8 +128,8 @@ std::string handle_command_set(const std::vector<std::string>& args, Store &stor
         return "-ERR invalid arguments\r\n";
     }
 
-    int ms = std::stoi(args[4]);
-    if (option == "ex") {ms = std::stoi(args[4]) * 1000;}
+    long long ms = std::stoll(args[4]);
+    if (option == "ex") {ms *= 1000;}
 
     store.set_with_expiry(args[1], args[2], ms);
     return "+OK\r\n";
@@ -386,4 +389,12 @@ std::string handle_command_config(const std::vector<std::string>& args, ServerSt
 
     std::vector<std::string> response {param, val};
     return encode_resp_array(response);
+}
+
+std::string handle_command_keys(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 2) { return "-ERR invalid arguments\r\n"; }
+    if (args[1] != "*") { return ""; }
+    
+    std::vector<std::string> result = store.get_keys();
+    return encode_resp_array(result);
 }

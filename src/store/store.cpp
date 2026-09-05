@@ -6,6 +6,9 @@
 #include <optional>
 #include <chrono>
 #include <mutex>
+#include <fstream>
+#include <iterator>
+#include <ranges>
 
 void Store::set(const std::string &key, const std::string &value) {
     std::lock_guard<std::mutex> lock(mtx);
@@ -22,7 +25,7 @@ void Store::set(const std::string &key, const std::string &value) {
     };
 }
 
-void Store::set_with_expiry(const std::string &key, const std::string &value, int ms) {
+void Store::set_with_expiry(const std::string &key, const std::string &value, long long ms) {
     std::lock_guard<std::mutex> lock(mtx);
 
     unsigned long long version = 0;
@@ -467,4 +470,36 @@ long long Store::get_version(const std::string &key) {
         return 0;
     }
     return it->second.version;
+}
+
+void Store::read_rdb_file(const std::string &file_path) {
+    // read the file contents
+    std::ifstream file(file_path, std::ios::binary);
+    if (!file.is_open()) { return; }
+    std::istreambuf_iterator<char> begin(file), end;
+    std::string file_contents(begin, end);
+
+    // parse the file contents
+    std::vector<RdbEntry> entries = parse_rdb(file_contents);
+    
+    uint64_t now_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        ).count();
+
+    for (const RdbEntry &entry : entries) {
+        if (!entry.expiry_ms.has_value()) {
+            set(entry.key, entry.value);
+            continue;
+        }
+        if (*entry.expiry_ms <= now_ms) { continue; }
+        uint64_t remaining_ms = *entry.expiry_ms - now_ms;
+        set_with_expiry(entry.key, entry.value, static_cast<long long>(remaining_ms));
+    }
+}
+
+std::vector<std::string> Store::get_keys() {
+    std::vector<std::string> keys {};
+    std::ranges::copy(std::views::keys(data), std::back_inserter(keys));
+    return keys;
 }
