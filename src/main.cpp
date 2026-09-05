@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
     std::string port_str = master_info.substr(split + 1);
 
     // define a replica socket
-    ReplicaSocket replica(host_str, port_str);
+    replica.set_master(host_str, port_str);
 
     // connect to the master server
     if (!replica.connect_to_master()) {
