@@ -25,6 +25,8 @@ std::string handle_command_incr(const std::vector<std::string>& args, Store &sto
 std::string handle_command_info(const std::vector<std::string>& args, ServerState &server);
 std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server, int client_fd);
 std::string handle_command_wait(const std::vector<std::string>& args, ServerState &server);
+std::string handle_command_config(const std::vector<std::string>& args, ServerState &server);
+
 
 // special commands
 void handle_command_psync(int client_fd, const std::vector<std::string>& args, ServerState &server);

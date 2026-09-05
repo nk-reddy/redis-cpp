@@ -6,6 +6,12 @@
 #include <vector>
 #include <condition_variable>
 
+struct RDBFile 
+{
+    std::string dir;
+    std::string db_filename;
+};
+
 class ServerState 
 {
     private:
@@ -23,6 +29,8 @@ class ServerState
     std::condition_variable replica_cv;
 
     bool writes_since_last_wait = false;
+
+    RDBFile rdb_file;
 
     public:
     ServerState() = default;
@@ -58,4 +66,15 @@ class ServerState
 
     bool get_writes_since_last_wait() { return writes_since_last_wait; }
     void set_writes_since_last_wait(bool update) { writes_since_last_wait = update; }
+
+    void set_rdb_file (std::string dir, std::string dirname) {
+        this->rdb_file.dir = dir;
+        this->rdb_file.db_filename = dirname;
+    }
+
+    std::string get_rdb_file_param (std::string param) {
+        if (param == "dir") { return rdb_file.dir; }
+        else if (param == "dbfilename") { return rdb_file.db_filename; }
+        return "";
+    }
 };

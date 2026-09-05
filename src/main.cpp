@@ -23,7 +23,9 @@ int main(int argc, char **argv) {
   // parse the CLI arguments
   bool custom_port = false;
   bool is_replica = false; 
-  int custom_port_index, master_server_index; 
+  bool rdb_file_dir = false;
+  bool rdb_file_dirname = false;
+  int custom_port_index, master_server_index, rdb_file_dir_index, rdb_file_dirname_index; 
   for (size_t i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == "--port") {
       if (i == (argc - 1)) {
@@ -41,6 +43,21 @@ int main(int argc, char **argv) {
       is_replica = true;
       master_server_index = i + 1;
     }
+    else if (std::string(argv[i]) == "--dir") {
+      if (i == (argc - 1)) {
+        std::cerr << "Invalid CLI arguments\n";
+        return 1;
+      }
+      rdb_file_dir = true;
+      rdb_file_dir_index = i + 1;
+    }
+    else if (std::string(argv[i]) == "--dbfilename") {
+      if (i == (argc - 1)) {
+        std::cerr << "Invalid CLI arguments\n";
+        return 1;
+      }
+      rdb_file_dirname = true;
+      rdb_file_dirname_index = i + 1;
   }
 
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -113,6 +130,11 @@ int main(int argc, char **argv) {
 
     // listen for commands from the master
     std::thread(handle_client, replica.get_master_fd(), std::ref(store), std::ref(state), true).detach();
+  }
+
+  // add rdb file configurability
+  if (rdb_file_dir && rdb_file_dirname) {
+    state.set_rdb_file(std::string(argv[rdb_file_dir_index]), std::string(argv[rdb_file_dirname_index]));
   }
 
   while (true) {

@@ -368,3 +368,19 @@ std::string handle_command_wait(const std::vector<std::string>& args, ServerStat
 
     return ":" + std::to_string(server.get_num_connected_replicas_with_offset(required_offset)) + "\r\n";
 }
+
+std::string handle_command_config(const std::vector<std::string>& args, ServerState &server) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
+    std::string type = args[1];
+    std::string param = args[2];
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+    std::transform(param.begin(), param.end(), param.begin(), ::tolower);
+
+    if (type != "get") { return "-ERR invalid arguments\r\n"; }
+
+    std::string val = server.get_rdb_file_param(param);
+    if (val == "") { return "-ERR invalid arguments\r\n"; }
+
+    std::vector<std::string> response {param, val};
+    return encode_resp_array(response);
+}
