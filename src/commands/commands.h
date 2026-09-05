@@ -7,7 +7,6 @@
 #include <vector> 
 
 std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &rawCommand = "");
-std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server);
 std::string handle_command_default();
 std::string handle_command_echo(const std::vector<std::string>& args);
 std::string handle_command_set(const std::vector<std::string>& args, Store &store);
@@ -31,4 +30,4 @@ void handle_command_psync(int client_fd, const std::vector<std::string>& args, S
 
 // others
 bool modifying_command(const std::string &command);
-void propogate_command_to_replicas(const std::string &rawCommand, ServerState &server);
+void propagate_command_to_replicas(const std::string &rawCommand, ServerState &server);

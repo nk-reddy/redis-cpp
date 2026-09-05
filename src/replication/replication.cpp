@@ -1,5 +1,6 @@
 #include "replication.h"
 #include "../store/helpers.h"
+#include "../client.h"
 
 #include <cstring>
 #include <sys/socket.h>
@@ -110,4 +111,8 @@ bool ReplicaSocket::handshake_with_master(ServerState &state) {
     if (bytes_received <= 0) { return false; }
 
     return true;
+}
+
+void ReplicaSocket::listen_for_master_commands(Store &store, ServerState &server) {
+    handle_client(master_fd, store, server, true);
 }

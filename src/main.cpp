@@ -109,6 +109,9 @@ int main(int argc, char **argv) {
       std:: cerr << "Failed handshake with master server...\n";
       return -1;
     }
+
+    // listen for commands from the master
+    std::thread(&ReplicaSocket::listen_for_master_commands, &replica, std::ref(store), std::ref(state)).detach();
   }
 
   while (true) {

@@ -63,9 +63,9 @@ std::string handle_command(const std::string &command, const std::vector<std::st
         response = handle_command_default();
     }
 
-    // propogate the command to any replicas
-    if (modifying_command(command)) {
-        propogate_command_to_replicas(rawCommand, server);
+    // propagate the command to any replicas
+    if (modifying_command(command) && server.get_role() == "master") {
+        propagate_command_to_replicas(rawCommand, server);
     }
 
     return response;
@@ -315,7 +315,7 @@ void handle_command_psync(int client_fd, const std::vector<std::string>& args, S
     send(client_fd, response.data(), response.length(), 0);
 }
 
-void propogate_command_to_replicas(const std::string &rawCommand, ServerState &server) {
+void propagate_command_to_replicas(const std::string &rawCommand, ServerState &server) {
     for (int replica_fd : server.get_connected_replicas()) {
         send(replica_fd, rawCommand.data(), rawCommand.length(), 0);
     }

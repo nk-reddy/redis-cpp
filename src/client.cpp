@@ -13,7 +13,7 @@
 #include <queue>
 #include <unordered_set>
 
-void handle_client(int client_fd, Store &store, ServerState &server) {
+void handle_client(int client_fd, Store &store, ServerState &server, bool is_master_connection) {
     server.add_connected_client();
     char buffer[1024];
 
@@ -118,7 +118,8 @@ void handle_client(int client_fd, Store &store, ServerState &server) {
     }
 
     // send response back to the client
-    send(client_fd, response.data(), response.length(), 0);
+    if (!is_master_connection) { (client_fd, response.data(), response.length(), 0); }
     }
+    
     close(client_fd);
 }
