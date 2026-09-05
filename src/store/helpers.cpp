@@ -67,3 +67,41 @@ std::string parse_hex_to_binary(const std::string &hex_str) {
     
     return result;
 }
+
+ParseResult parse_one_resp_array(const std::string &input) {
+    ParseResult result{false, {}, 0};
+    size_t pos = 0;
+
+    // parse the number of elements
+    if (pos >= input.size() || input[pos] != '*') { return result; }
+
+    size_t line_end = input.find("\r\n", pos);
+    if (line_end == std::string::npos) { return result; }
+
+    int count = std::stoi(input.substr(pos + 1, line_end - (pos + 1)));
+
+    pos = line_end + 2;
+    for (int i = 0; i < count; ++i) {
+        // parse each element
+        // parse the bulk string (header)
+        if (pos >= input.size() || input[pos] != '*') { return result; }
+
+        line_end = input.find("\r\n", pos);
+        if (line_end == std::string::npos) { return result; }
+
+        int length = std::stoi(input.substr(pos + 1, line_end - (pos + 1)));
+
+        // parse the bulk string (value)
+        pos = line_end + 2;
+        if ((pos + length + 2) > input.size()) { return result; }
+        std::string value = input.substr(pos, length);
+        result.args.push_back(value);
+        pos += length; 
+        if (input.substr(pos, 2) != "\r\n") { return result; }
+        pos += 2;
+    }
+    result.raw_command = input.substr(0, pos);
+    result.complete = true;
+    result.bytes_consumed = pos;
+    return result;
+}
