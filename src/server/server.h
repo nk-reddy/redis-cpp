@@ -46,7 +46,7 @@ class ServerState
     void add_connected_replica(int client_fd);
     void add_offset(int bytes);
 
-    std::vector<int> ServerState::get_connected_replicas();
+    std::vector<int> get_connected_replicas();
     int get_num_connected_replicas();
     int get_num_connected_replicas_with_offset(long long offset);
 
