@@ -8,8 +8,8 @@ struct ParseResult
 {
     bool complete;
     std::vector<std::string> args;
-    std::string raw_command;
     size_t bytes_consumed;
+    std::string raw_command;
 };
 
 std::vector<std::string> parse_resp(std::string input);

@@ -69,7 +69,7 @@ std::string parse_hex_to_binary(const std::string &hex_str) {
 }
 
 ParseResult parse_one_resp_array(const std::string &input) {
-    ParseResult result{false, {}, 0};
+    ParseResult result{false, {}, 0, ""};
     size_t pos = 0;
 
     // parse the number of elements
