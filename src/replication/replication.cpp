@@ -60,6 +60,23 @@ bool ReplicaSocket::connect_to_master() {
     return true;
 }
 
+static std::string recv_line(int fd) {
+    std::string line; 
+    char c; 
+
+    while (true) {
+        int n = recv(fd, &c, 1, 0);
+        if (n <= 0) { return ""; }
+
+        line.push_back(c);
+        if (line.length() >= 2 && line[line.length() - 2] == '\r' && line[line.length() - 1] == '\n') {
+            break;
+        }
+    }
+
+    return line;
+}
+
 bool ReplicaSocket::handshake_with_master(ServerState &state) {
     // 1 - send PING
     const char *message = "*1\r\n$4\r\nPING\r\n";
@@ -123,21 +140,4 @@ bool ReplicaSocket::handshake_with_master(ServerState &state) {
     }
 
     return true;
-}
-
-std::string recv_line(int fd) {
-    std::string line; 
-    char c; 
-
-    while (true) {
-        int n = recv(fd, &c, 1, 0);
-        if (n <= 0) { return ""; }
-
-        line.push_back(c);
-        if (line.length() >= 2 && line[line.length() - 2] == '\r' && line[line.length() - 1] == '\n') {
-            break;
-        }
-    }
-
-    return line;
 }
