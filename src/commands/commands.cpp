@@ -62,6 +62,9 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     else if (command == "replconf") {
         response = handle_command_replconf(data, server);
     }
+    else if (command == "wait") {
+        response = handle_command_wait(data, server);
+    }
     else {
         response = handle_command_default();
     }
