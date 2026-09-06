@@ -468,7 +468,7 @@ std::string handle_command_unsubscribe(const std::vector<std::string>& args, Ser
 
     std::string response =
         "*3\r\n"
-        "$9\r\nsubscribe\r\n"
+        "$11\r\nunsubscribe\r\n"
         "$" + std::to_string(args[1].size()) + "\r\n" +
         args[1] + "\r\n" +
         ":" + std::to_string(client_state->subscribed_channels.size()) + "\r\n";
