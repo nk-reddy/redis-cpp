@@ -3,6 +3,7 @@
 #include <limits>
 #include <vector>
 #include <format>
+#include <sstream>
 
 constexpr uint8_t RDB_TYPE_STRING = 0x00;
 constexpr uint8_t RDB_OPCODE_AUX = 0xFA;
@@ -370,4 +371,16 @@ std::vector<RdbEntry> parse_rdb(const std::string &contents) {
     }
 
     return entries;
+}
+
+std::vector<std::string> split_spaces(const std::string &input) {
+    std::istringstream stream(input);
+    std::vector<std::string> parts;
+    std::string part;
+
+    while (stream >> part) {
+        parts.push_back(part);
+    }
+
+    return parts;
 }

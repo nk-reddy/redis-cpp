@@ -1,8 +1,10 @@
 #include "server.h"
 #include "../store/helpers.h"
+#include "../commands/commands.h"
 
 #include <sys/socket.h>
 #include <fstream>
+#include <iostream>
 #include <cstdio>
 #include <unistd.h>
 
@@ -118,19 +120,46 @@ std::string ServerState::get_config_file_param (std::string param) {
     return "";
 }
 
-void ServerState::handle_append_only() {
-    // 1 - create the dir if it doesn't exist
+std::filesystem::path read_manifest_file(std::filesystem::path dir_path, std::filesystem::path manifest_fp) {
+    std::ifstream file(manifest_fp);
+    if (!file.is_open()) { return {}; }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.ends_with("type i")) {
+            std::vector<std::string> parts = split_spaces(line);
+            if (parts.size() < 2) { continue; }
+            return dir_path / parts[1];
+        }
+    }
+    return {};
+} 
+
+int ServerState::handle_append_only() {
+    // 1a - create the dir if it doesn't exist
+    // 1b - if it exists, replay the AOF file
     std::filesystem::path dir_path = std::filesystem::path(config_file.dir) / config_file.appenddirname;
+    std::filesystem::path manifest_file_path = dir_path / (config_file.appendfilename + ".manifest");
+    if (std::filesystem::exists(dir_path) && std::filesystem::exists(manifest_file_path))
+    {
+        // read the manifest file
+        std::filesystem::path aof_path = read_manifest_file(dir_path, manifest_file_path);
+        if (!aof_path.empty()) { 
+            config_file.active_aof_path = aof_path; 
+            return 1;
+        }
+        return 0;
+    }
     std::filesystem::create_directories(dir_path);
 
-    // 2 - create AOF file inside the dir
+    // 2a - create AOF file inside the dir
     config_file.active_aof_path = dir_path / (config_file.appendfilename + ".1.incr.aof");
     std::ofstream aof_file(config_file.active_aof_path, std::ios::app);
 
     // 3 - create manifest file inside the dir
-    std::filesystem::path manifest_file_path = dir_path / (config_file.appendfilename + ".manifest");
     std::ofstream manifest_file(manifest_file_path);
     manifest_file << "file " + config_file.active_aof_path.filename().string() + " seq 1 type i\n";
+    return 0;
 }
 
 void ServerState::write_to_append_only_file(const std::string &raw_command) {
@@ -147,4 +176,28 @@ void ServerState::write_to_append_only_file(const std::string &raw_command) {
         }
     }
     fclose(aof_file);
+}
+
+void ServerState::replay_aof_commands(Store &store) {
+    // 1 - open the active AOF file
+    std::ifstream file(config_file.active_aof_path);
+    if (!file.is_open()) { return; }
+
+    // 2 - store the file contents in a string
+    std::string pending((std::istreambuf_iterator<char>(file)),
+                               std::istreambuf_iterator<char>());
+
+    // 3 - handle the commands from the file
+    while (!pending.empty())
+    {
+        ParseResult parsed = parse_one_resp_array(pending);
+        if (!parsed.complete) { break; }
+
+        std::vector<std::string> data = parsed.args;
+        pending.erase(0, parsed.bytes_consumed);
+
+        if (data.empty()) { break; }
+        std::transform(data[0].begin(), data[0].end(), data[0].begin(), ::tolower);
+        handle_command(data[0], data, store, *this);
+    }
 }

@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 
   // handle the append-only directory
   if (state.append_only_on()) {
-    state.handle_append_only();
+    if (state.handle_append_only() > 0) { state.replay_aof_commands(store); }
   }
 
   while (true) {

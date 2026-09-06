@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../store/store.h"
+
 #include <string>
 #include <unordered_map>
 #include <mutex>
@@ -89,6 +91,7 @@ class ServerState
         std::transform(val.begin(), val.end(), val.begin(), ::tolower);
         return val == "always";
     }
-    void handle_append_only();
+    int handle_append_only();
     void write_to_append_only_file(const std::string &raw_command);
+    void replay_aof_commands(Store &store);
 };

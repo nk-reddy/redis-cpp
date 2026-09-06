@@ -46,3 +46,6 @@ uint64_t read_u64_be(const std::string &data, size_t &pos);
 RdbLength read_length(const std::string &data, size_t &pos);
 std::string read_rdb_string(const std::string &data, size_t &pos);
 std::vector<RdbEntry> parse_rdb(const std::string &contents);
+
+// other
+std::vector<std::string> split_spaces(const std::string &input);
