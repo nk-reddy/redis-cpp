@@ -86,7 +86,7 @@ std::string handle_command(const std::string &command, const std::vector<std::st
 
     // handle subscribed mode state
     if (client_state != nullptr && client_state->in_subscribed_mode && !subscribed_command(command)) {
-        return "-ERR Can't execute " + command + "\r\n";
+        return "-ERR can't execute '" + command + "'\r\n";
     }
 
     // propagate the command to any replicas
