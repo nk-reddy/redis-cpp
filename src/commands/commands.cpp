@@ -11,7 +11,7 @@
 #include <condition_variable>
 #include <chrono>
 
-std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &raw_command, ClientState *client_state = nullptr) {
+std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &raw_command, ClientState *client_state) {
     // handle the command
     std::string response; 
     if (command == "echo") {

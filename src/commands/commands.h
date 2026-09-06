@@ -8,7 +8,7 @@
 #include <vector> 
 
 std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &rawCommand = "", ClientState *client_state = nullptr);
-std::string handle_command_default();
+std::string handle_command_default(bool in_subscribed_mode);
 std::string handle_command_echo(const std::vector<std::string>& args);
 std::string handle_command_set(const std::vector<std::string>& args, Store &store);
 std::string handle_command_get(const std::vector<std::string>& args, Store &store);
@@ -37,4 +37,5 @@ void handle_command_psync(int client_fd, const std::vector<std::string>& args, S
 
 // others
 bool modifying_command(const std::string &command);
+bool subscribed_command(const std::string &command);
 void propagate_command_to_replicas(const std::string &rawCommand, ServerState &server);
