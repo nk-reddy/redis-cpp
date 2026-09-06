@@ -82,6 +82,11 @@ std::string handle_command(const std::string &command, const std::vector<std::st
         server.set_writes_since_last_wait(true);
     }
 
+    // write the command to AOF if needed
+    if (modifying_command(command) && server.append_only_on()) {
+        server.write_to_append_only_file(raw_command);
+    }
+
     return response;
 }
 

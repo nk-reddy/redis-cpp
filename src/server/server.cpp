@@ -3,6 +3,8 @@
 
 #include <sys/socket.h>
 #include <fstream>
+#include <cstdio>
+#include <unistd.h>
 
 std::string ServerState::get_role() {
     return role;
@@ -122,11 +124,27 @@ void ServerState::handle_append_only() {
     std::filesystem::create_directories(dir_path);
 
     // 2 - create AOF file inside the dir
-    std::filesystem::path aof_file_path = dir_path / (config_file.appendfilename + ".1.incr.aof");
-    std::ofstream aof_file(aof_file_path, std::ios::app);
+    config_file.active_aof_path = dir_path / (config_file.appendfilename + ".1.incr.aof");
+    std::ofstream aof_file(config_file.active_aof_path, std::ios::app);
 
     // 3 - create manifest file inside the dir
     std::filesystem::path manifest_file_path = dir_path / (config_file.appendfilename + ".manifest");
     std::ofstream manifest_file(manifest_file_path);
-    manifest_file << "file " + aof_file_path.filename().string() + " seq 1 type i\n";
+    manifest_file << "file " + config_file.active_aof_path.filename().string() + " seq 1 type i\n";
+}
+
+void ServerState::write_to_append_only_file(const std::string &raw_command) {
+    // 1 - open the file in append mode
+    FILE *aof_file = fopen(config_file.active_aof_path.c_str(), "a");
+    if (aof_file != nullptr) {
+        // 2 - write the new command to the file
+        fwrite(raw_command.c_str(), 1, raw_command.length(), aof_file);
+
+        // 3 - flush if needed
+        if (is_append_fsync_always()) {
+            fflush(aof_file);
+            fsync(fileno(aof_file));
+        }
+    }
+    fclose(aof_file);
 }

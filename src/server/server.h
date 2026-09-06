@@ -18,6 +18,7 @@ struct FileConfig
     std::string appenddirname = "appendonlydir";
     std::string appendfilename = "appendonly.aof";
     std::string appendfsync = "everysec";
+    std::filesystem::path active_aof_path;
 };
 
 class ServerState 
@@ -83,5 +84,11 @@ class ServerState
         std::transform(val.begin(), val.end(), val.begin(), ::tolower);
         return val == "yes"; 
     }
+    bool is_append_fsync_always() {
+        std::string val = config_file.appendfsync;
+        std::transform(val.begin(), val.end(), val.begin(), ::tolower);
+        return val == "always";
+    }
     void handle_append_only();
+    void write_to_append_only_file(const std::string &raw_command);
 };
