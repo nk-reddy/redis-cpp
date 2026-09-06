@@ -442,8 +442,13 @@ std::string handle_command_subscribe(const std::vector<std::string>& args, Serve
     // add on the server side
     server.subscribe_to_channel(args[1], client_state->client_fd);
 
-    std::vector<std::string> response {"subscribe", args[1], encode_resp_integer(client_state->subscribed_channels.size())};
-    return encode_resp_array(response);
+    std::string response =
+        "*3\r\n"
+        "$9\r\nsubscribe\r\n"
+        "$" + std::to_string(args[1].size()) + "\r\n" +
+        args[1] + "\r\n" +
+        ":" + std::to_string(client_state->subscribed_channels.size()) + "\r\n";
+    return response;
 }
 
 std::string handle_command_publish(const std::vector<std::string>& args, ServerState &server) {
