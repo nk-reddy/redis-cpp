@@ -11,7 +11,7 @@
 #include <condition_variable>
 #include <chrono>
 
-std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &raw_command, int client_fd) {
+std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &raw_command, ClientState *client_state = nullptr) {
     // handle the command
     std::string response; 
     if (command == "echo") {
@@ -60,7 +60,7 @@ std::string handle_command(const std::string &command, const std::vector<std::st
         response = handle_command_info(data, server);
     }
     else if (command == "replconf") {
-        response = handle_command_replconf(data, server, client_fd);
+        response = handle_command_replconf(data, server, client_state);
     }
     else if (command == "wait") {
         response = handle_command_wait(data, server);
@@ -71,8 +71,22 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     else if (command == "keys") {
         response = handle_command_keys(data, store);
     }
+    else if (command == "subscribe") {
+        response = handle_command_subscribe(data, server, client_state);
+    }
+    else if (command == "unsubscribe") {
+        response = handle_command_unsubscribe(data, server, client_state);
+    }
+    else if (command == "publish") {
+        response = handle_command_publish(data, server);
+    }
     else {
-        response = handle_command_default();
+        response = handle_command_default(client_state->in_subscribed_mode);
+    }
+
+    // handle subscribed mode state
+    if (client_state->in_subscribed_mode && !subscribed_command(command)) {
+        return "- ERR Can't execute 'set': only (P|S)SUBSCRIBE / (P|S)UNSUBSCRIBE / PING / QUIT / RESET are allowed in this context";
     }
 
     // propagate the command to any replicas
@@ -104,8 +118,22 @@ bool modifying_command(const std::string &command) {
     return write_commands.contains(command);
 }
 
-std::string handle_command_default() {
-    return "+PONG\r\n";
+bool subscribed_command(const std::string &command) {
+    static const std::unordered_set<std::string> subscribed_commands = {
+        "subscribe",
+        "unsubscribe",
+        "psubscribe",
+        "punsubscribe",
+        "ping",
+        "quit"
+    };
+
+    return subscribed_commands.contains(command);
+}
+
+std::string handle_command_default(bool in_subscribed_mode) {
+    if (!in_subscribed_mode) { return "+PONG\r\n"; }
+    return "*2\r\n$4\r\npong\r\n$0\r\n\r\n";
 }
 
 std::string handle_command_echo(const std::vector<std::string>& args) {
@@ -303,7 +331,7 @@ std::string handle_command_info(const std::vector<std::string>& args, ServerStat
     return encode_resp_string(response);
 }
 
-std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server, int client_fd) {
+std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server, ClientState *client_state) {
     if (args.size() >= 3) {
         std::string type = args[1];
         std::transform(type.begin(), type.end(), type.begin(), ::tolower);
@@ -315,7 +343,7 @@ std::string handle_command_replconf(const std::vector<std::string>& args, Server
         if (type == "ack")
         {
             long long offset = std::stoll(args[2]);
-            server.update_replica_offset(client_fd, offset);
+            server.update_replica_offset(client_state->client_fd, offset);
             server.get_replica_cv().notify_all();
             return "";
         }
@@ -402,4 +430,36 @@ std::string handle_command_keys(const std::vector<std::string>& args, Store &sto
     
     std::vector<std::string> result = store.get_keys();
     return encode_resp_array(result);
+}
+
+std::string handle_command_subscribe(const std::vector<std::string>& args, ServerState &server, ClientState *client_state) {
+    if (args.size() != 2) { return "-ERR invalid arguments\r\n"; }
+
+    // add on the client side
+    client_state->in_subscribed_mode = true;
+    client_state->subscribed_channels.insert(args[1]);
+
+    // add on the server side
+    server.subscribe_to_channel(args[1], client_state->client_fd);
+
+    std::vector<std::string> response {"subscribe", args[1], encode_resp_integer(client_state->subscribed_channels.size())};
+    return encode_resp_array(response);
+}
+
+std::string handle_command_publish(const std::vector<std::string>& args, ServerState &server) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
+    int response = server.publish_to_channel(args[1], args[2]);
+    return encode_resp_integer(response);
+}
+
+std::string handle_command_unsubscribe(const std::vector<std::string>& args, ServerState &server, ClientState *client_state) {
+    if (args.size() != 2) { return "-ERR invalid arguments\r\n"; }
+
+    // remove on the client side
+    client_state->subscribed_channels.erase(args[1]);
+
+    // remove on the server side
+    server.unsubscribe_from_channel(args[1], client_state->client_fd);
+
+    return encode_resp_integer(client_state->subscribed_channels.size());
 }

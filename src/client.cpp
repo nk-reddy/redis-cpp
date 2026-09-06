@@ -2,6 +2,7 @@
 #include "commands/commands.h"
 #include "store/store.h"
 #include "store/helpers.h"
+#include "client-state/client-state.h"
 
 #include <string>
 #include <cctype>
@@ -18,9 +19,8 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
     char buffer[1024];
 
     // state variables SPECIFIC to the client
-    bool in_multi = false;
-    std::queue<QueuedCommand> queued_commands {};
-    std::unordered_map<std::string, long long> watched_keys {};
+    ClientState client_state;
+    client_state.client_fd = client_fd;
 
     while (1) 
     {
@@ -52,62 +52,62 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
             // case - command multi
             if (data[0] == "multi") 
             {
-                in_multi = true;
+                client_state.in_multi = true;
                 response = "+OK\r\n";
             }
             // case - command unwatch 
             else if (data[0] == "unwatch")
             {
-                watched_keys = {};
+                client_state.watched_keys = {};
                 response = "+OK\r\n";
             }
             // case - command is NOT multi
             else 
             {
-                switch (in_multi) 
+                switch (client_state.in_multi) 
                 {
                     case true: // case - prior command has multi ON
                         if (data[0] == "exec") 
                         {
-                            in_multi = false;
+                            client_state.in_multi = false;
                             bool watched_change = false;
 
                             // determine if any watched keys were touched
-                            for (const auto &[key, version] : watched_keys) {
+                            for (const auto &[key, version] : client_state.watched_keys) {
                                 if (store.get_version(key) != version) {
                                     watched_change = true;
                                     break;
                                 }
                             }
 
-                            watched_keys = {};
+                            client_state.watched_keys = {};
                             if (watched_change)
                             {
                                 response = "*-1\r\n";
-                                queued_commands = {};
+                                client_state.queued_commands = {};
                             }
                             else 
                             {
-                                response = "*" + std::to_string(queued_commands.size()) + "\r\n";
-                                while (!queued_commands.empty()) {
-                                    QueuedCommand current_command = queued_commands.front();
-                                    std::string current_response = handle_command(current_command.args[0], current_command.args, store, server, current_command.raw_command, client_fd);
+                                response = "*" + std::to_string(client_state.queued_commands.size()) + "\r\n";
+                                while (!client_state.queued_commands.empty()) {
+                                    QueuedCommand current_command = client_state.queued_commands.front();
+                                    std::string current_response = handle_command(current_command.args[0], current_command.args, store, server, current_command.raw_command, &client_state);
                                     response += current_response;
-                                    queued_commands.pop();
+                                    client_state.queued_commands.pop();
                                 }
                             }
                         }
                         else if (data[0] == "discard")
                         {
-                            in_multi = false;
-                            watched_keys = {};
-                            queued_commands = {};
+                            client_state.in_multi = false;
+                            client_state.watched_keys = {};
+                            client_state.queued_commands = {};
                             response = "+OK\r\n";
                         }
                         else if (data[0] == "watch") { response = "-ERR WATCH inside MULTI is not allowed\r\n"; }
                         else 
                         {
-                            queued_commands.push({data, parsed.raw_command});
+                            client_state.queued_commands.push({data, parsed.raw_command});
                             response = "+QUEUED\r\n";
                         }
                         break;
@@ -116,11 +116,11 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
                         else if (data[0] == "discard") { response = "-ERR DISCARD without MULTI\r\n"; }
                         else if (data[0] == "watch") {
                             for (size_t i = 1; i < data.size(); ++i) {
-                                watched_keys[data[i]] = store.get_version(data[i]);
+                                client_state.watched_keys[data[i]] = store.get_version(data[i]);
                             }
                             response = "+OK\r\n";
                         }
-                        else { response = handle_command(data[0], data, store, server, parsed.raw_command, client_fd); }
+                        else { response = handle_command(data[0], data, store, server, parsed.raw_command, &client_state); }
                         break;
                 }
             }

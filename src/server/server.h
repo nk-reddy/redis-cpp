@@ -43,6 +43,8 @@ class ServerState
 
     FileConfig config_file;
 
+    std::unordered_map<std::string, std::unordered_set<int>> channel_subscribers;
+
     public:
     ServerState() = default;
     ServerState(int port) {
@@ -94,4 +96,7 @@ class ServerState
     int handle_append_only();
     void write_to_append_only_file(const std::string &raw_command);
     void replay_aof_commands(Store &store);
+    void subscribe_to_channel(const std::string &channel, int client_fd);
+    void unsubscribe_from_channel(const std::string &channel, int client_fd);
+    int publish_to_channel(const std::string &channel, const std::string &message);
 };

@@ -32,6 +32,7 @@ std::pair<long long, long long> parse_stream_id(const std::string &id, bool is_s
 
 std::string encode_resp_string(const std::string &str);
 std::string encode_resp_array(const std::vector<std::string> &values);
+std::string encode_resp_integer(const int &val);
 
 std::string parse_hex_to_binary(const std::string &hex_str);
 

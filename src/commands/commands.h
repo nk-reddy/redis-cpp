@@ -2,11 +2,12 @@
 
 #include "../store/store.h"
 #include "../server/server.h"
+#include "../client-state/client-state.h"
 
 #include <string>
 #include <vector> 
 
-std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &rawCommand = "", int client_fd = -1);
+std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &rawCommand = "", ClientState *client_state = nullptr);
 std::string handle_command_default();
 std::string handle_command_echo(const std::vector<std::string>& args);
 std::string handle_command_set(const std::vector<std::string>& args, Store &store);
@@ -23,10 +24,13 @@ std::string handle_command_xrange(const std::vector<std::string>& args, Store &s
 std::string handle_command_xread(const std::vector<std::string>& args, Store &store);
 std::string handle_command_incr(const std::vector<std::string>& args, Store &store);
 std::string handle_command_info(const std::vector<std::string>& args, ServerState &server);
-std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server, int client_fd);
+std::string handle_command_replconf(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
 std::string handle_command_wait(const std::vector<std::string>& args, ServerState &server);
 std::string handle_command_config(const std::vector<std::string>& args, ServerState &server);
 std::string handle_command_keys(const std::vector<std::string>& args, Store &store);
+std::string handle_command_subscribe(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
+std::string handle_command_publish(const std::vector<std::string>& args, ServerState &server);
+std::string handle_command_unsubscribe(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
 
 // special commands
 void handle_command_psync(int client_fd, const std::vector<std::string>& args, ServerState &server);

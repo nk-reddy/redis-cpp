@@ -201,3 +201,21 @@ void ServerState::replay_aof_commands(Store &store) {
         handle_command(data[0], data, store, *this);
     }
 }
+
+void ServerState::subscribe_to_channel(const std::string &channel, int client_fd) {
+    channel_subscribers[channel].insert(client_fd);
+}
+
+void ServerState::unsubscribe_from_channel(const std::string &channel, int client_fd) {
+    channel_subscribers[channel].erase(client_fd);
+}
+
+int ServerState::publish_to_channel(const std::string &channel, const std::string &message) {
+    std::unordered_set<int> subscribers = channel_subscribers[channel];
+    std::vector<std::string> response_vec {"message", channel, message};
+    std::string response = encode_resp_array(response_vec);
+    for (const auto &client_fd: subscribers) {
+        send(client_fd, response.data(), response.length(), 0);
+    }
+    return subscribers.size();
+}

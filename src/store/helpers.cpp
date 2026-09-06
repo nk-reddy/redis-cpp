@@ -384,3 +384,7 @@ std::vector<std::string> split_spaces(const std::string &input) {
 
     return parts;
 }
+
+std::string encode_resp_integer(const int &val) {
+    return ":" + std::to_string(val) + "\r\n";
+}
