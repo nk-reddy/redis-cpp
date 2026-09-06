@@ -85,7 +85,7 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     }
 
     // handle subscribed mode state
-    if (client_state->in_subscribed_mode && !subscribed_command(command)) {
+    if (client_state != nullptr && client_state->in_subscribed_mode && !subscribed_command(command)) {
         return "- ERR Can't execute 'set': only (P|S)SUBSCRIBE / (P|S)UNSUBSCRIBE / PING / QUIT / RESET are allowed in this context";
     }
 
