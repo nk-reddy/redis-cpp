@@ -86,7 +86,7 @@ std::string handle_command(const std::string &command, const std::vector<std::st
 
     // handle subscribed mode state
     if (client_state != nullptr && client_state->in_subscribed_mode && !subscribed_command(command)) {
-        return "-ERR can't execute '" + command + "'\r\n";
+        return "-ERR can't execute '" + command + "' in subscribed mode\r\n";
     }
 
     // propagate the command to any replicas
@@ -466,5 +466,11 @@ std::string handle_command_unsubscribe(const std::vector<std::string>& args, Ser
     // remove on the server side
     server.unsubscribe_from_channel(args[1], client_state->client_fd);
 
-    return encode_resp_integer(client_state->subscribed_channels.size());
+    std::string response =
+        "*3\r\n"
+        "$9\r\nsubscribe\r\n"
+        "$" + std::to_string(args[1].size()) + "\r\n" +
+        args[1] + "\r\n" +
+        ":" + std::to_string(client_state->subscribed_channels.size()) + "\r\n";
+    return response;
 }
