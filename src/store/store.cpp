@@ -679,7 +679,7 @@ std::string Store::setbit(const std::string &key, int &offset, bool val) {
     auto it = data.find(key);
     if (it != data.end()) {
         // case exists - we need to grab and modify the string
-        if (std::holds_alternative<std::string>(it->second.value)) { return "-ERR key exists and not a string.\r\n"; }
+        if (!std::holds_alternative<std::string>(it->second.value)) { return "-ERR key exists and not a string.\r\n"; }
         auto &value = std::get<std::string>(it->second.value);
 
         // get the char to modify based on offset
@@ -691,14 +691,14 @@ std::string Store::setbit(const std::string &key, int &offset, bool val) {
          }
 
         // modify but return the original 
-        int val = value[char_pos] & (1 << (7 - bit_pos));
+        int original_val = value[char_pos] & (1 << (7 - bit_pos));
         if (val) { value[char_pos] |= (1 << (7 - bit_pos)); } 
         else { value[char_pos] &= ~(1 << (7 - bit_pos)); }
-        return encode_resp_integer(val);
+        return encode_resp_integer(original_val);
     }
 
     // case new - we need to create the string
-    int n_bytes = offset / 8;
+    int n_bytes = offset / 8 + 1;
     int bit_pos = offset % 8;
     std::string value(n_bytes, '\0');
     if (val) { value[value.length() - 1] |= (1 << (7 - bit_pos)); }
@@ -716,7 +716,7 @@ std::string Store::getbit(const std::string &key, int &offset) {
     std::lock_guard<std::mutex> lock(mtx);
     auto it = data.find(key);
     if (it == data.end()) { return ":0\r\n"; }
-    if (std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+    if (!std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
 
     auto &value = std::get<std::string>(it->second.value);
 
@@ -732,7 +732,7 @@ std::string Store::strlen(const std::string &key) {
     std::lock_guard<std::mutex> lock(mtx);
     auto it = data.find(key);
     if (it == data.end()) { return ":0\r\n"; }
-    if (std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+    if (!std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
 
     auto &value = std::get<std::string>(it->second.value);
     return encode_resp_integer(value.length());
@@ -744,7 +744,7 @@ std::string Store::bitcount(const std::string &key, int start, int stop) {
 
     auto it = data.find(key);
     if (it == data.end()) { return ":0\r\n"; }
-    if (std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+    if (!std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
 
     auto &value = std::get<std::string>(it->second.value);
     int size = value.length();
@@ -764,11 +764,11 @@ std::string Store::bitop_and(const std::string &dest_key, const std::string &src
     // obtain the source strings 
     auto it = data.find(src_key1);
     if (it == data.end()) { return ":0\r\n"; }
-    if (std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+    if (!std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
 
     auto it_two = data.find(src_key2);
     if (it_two == data.end()) { return ":0\r\n"; }
-    if (std::holds_alternative<std::string>(it_two->second.value)) { return ":0\r\n"; }
+    if (!std::holds_alternative<std::string>(it_two->second.value)) { return ":0\r\n"; }
 
     auto &value_one = std::get<std::string>(it->second.value);
     auto &value_two = std::get<std::string>(it_two->second.value);
