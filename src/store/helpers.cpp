@@ -481,10 +481,10 @@ std::pair<double, double> geo_decode(uint64_t geo_code) {
     uint64_t y = geo_code >> 1;
     uint64_t x = geo_code;
 
-    uint32_t grid_latitude_number =
+    uint32_t grid_longitude_number =
         compact_int64_to_int32(x);
 
-    uint32_t grid_longitude_number =
+    uint32_t grid_latitude_number =
         compact_int64_to_int32(y);
 
     return convert_grid_numbers_to_coordinates(
