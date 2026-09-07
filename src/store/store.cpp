@@ -691,7 +691,7 @@ std::string Store::setbit(const std::string &key, int &offset, bool val) {
          }
 
         // modify but return the original 
-        int original_val = value[char_pos] & (1 << (7 - bit_pos));
+        int original_val = (value[char_pos] & (1 << (7 - bit_pos))) != 0;
         if (val) { value[char_pos] |= (1 << (7 - bit_pos)); } 
         else { value[char_pos] &= ~(1 << (7 - bit_pos)); }
         return encode_resp_integer(original_val);
