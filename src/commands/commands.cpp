@@ -710,7 +710,7 @@ std::string handle_command_strlen(const std::vector<std::string>& args, Store &s
 }
 
 std::string handle_command_bitcount(const std::vector<std::string>& args, Store &store) {
-    if (args.size() != 2 || args.size() != 4) { return "-ERR invalid arguments\r\n"; }
+    if (args.size() != 2 && args.size() != 4) { return "-ERR invalid arguments\r\n"; }
     int start, stop;
     if (args.size() == 2) 
     {
