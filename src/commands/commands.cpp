@@ -556,7 +556,7 @@ std::string handle_command_geopos(const std::vector<std::string>& args, Store &s
         std::ostringstream out1, out2;
         out1 << std::setprecision(17) << (*geopos_val).first;
         out2 << std::setprecision(17) << (*geopos_val).second;
-        response += encode_resp_array({out1.str(), out2.str()});
+        response += encode_resp_array({out2.str(), out1.str()});
     }
     return response;
 }
