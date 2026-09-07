@@ -1,9 +1,10 @@
 #include "helpers.h"
 
 #include <limits>
-#include <vector>
 #include <format>
 #include <sstream>
+#include <cmath>
+#include <iostream>
 
 constexpr uint8_t RDB_TYPE_STRING = 0x00;
 constexpr uint8_t RDB_OPCODE_AUX = 0xFA;
@@ -12,6 +13,16 @@ constexpr uint8_t RDB_OPCODE_EXPIRE_MS = 0xFC;
 constexpr uint8_t RDB_OPCODE_EXPIRE_SEC = 0xFD;
 constexpr uint8_t RDB_OPCODE_SELECTDB = 0xFE;
 constexpr uint8_t RDB_OPCODE_EOF = 0xFF;
+
+constexpr double MIN_LATITUDE = -85.05112878;
+constexpr double MAX_LATITUDE = 85.05112878;
+constexpr double MIN_LONGITUDE = -180.0;
+constexpr double MAX_LONGITUDE = 180.0;
+
+constexpr double LATITUDE_RANGE = MAX_LATITUDE - MIN_LATITUDE;
+constexpr double LONGITUDE_RANGE = MAX_LONGITUDE - MIN_LONGITUDE;
+
+constexpr double EARTH_RADIUS_METERS = 6372797.560856;
 
 std::vector<std::string> parse_resp(std::string input) {
     size_t pos = 1;
@@ -34,6 +45,14 @@ std::vector<std::string> parse_resp(std::string input) {
     }
 
     return elems;
+}
+
+double parse_resp_string_to_double(const std::string &input) {
+    int pos = input.find("\r\n");
+    int length = std::stoi(input.substr(1, pos - 1));
+
+    pos += 2;
+    return std::stod(input.substr(pos, length)); 
 }
 
 std::pair<long long, long long> parse_stream_id(const std::string &id, bool is_start) {
@@ -387,4 +406,122 @@ std::vector<std::string> split_spaces(const std::string &input) {
 
 std::string encode_resp_integer(const int &val) {
     return ":" + std::to_string(val) + "\r\n";
+}
+
+uint64_t spread_int32_to_int64(uint32_t v) {
+    uint64_t result = v;
+    result = (result | (result << 16)) & 0x0000FFFF0000FFFFULL;
+    result = (result | (result << 8)) & 0x00FF00FF00FF00FFULL;
+    result = (result | (result << 4)) & 0x0F0F0F0F0F0F0F0FULL;
+    result = (result | (result << 2)) & 0x3333333333333333ULL;
+    result = (result | (result << 1)) & 0x5555555555555555ULL;
+    return result;
+}
+
+uint64_t interleave(uint32_t x, uint32_t y) {
+    uint64_t x_spread = spread_int32_to_int64(x);
+    uint64_t y_spread = spread_int32_to_int64(y);
+    uint64_t y_shifted = y_spread << 1;
+    return x_spread | y_shifted;
+}
+
+uint64_t geo_encode(const double &latitude, const double &longitude) {
+    // Normalize to the range 0-2^26
+    double normalized_latitude = pow(2, 26) * (latitude - MIN_LATITUDE) / LATITUDE_RANGE;
+    double normalized_longitude = pow(2, 26) * (longitude - MIN_LONGITUDE) / LONGITUDE_RANGE;
+
+    // Truncate to integers
+    uint32_t lat_int = static_cast<uint32_t>(normalized_latitude);
+    uint32_t lon_int = static_cast<uint32_t>(normalized_longitude);
+
+    return interleave(lat_int, lon_int);
+}
+
+uint32_t compact_int64_to_int32(uint64_t v) {
+    v = v & 0x5555555555555555ULL;
+    v = (v | (v >> 1)) & 0x3333333333333333ULL;
+    v = (v | (v >> 2)) & 0x0F0F0F0F0F0F0F0FULL;
+    v = (v | (v >> 4)) & 0x00FF00FF00FF00FFULL;
+    v = (v | (v >> 8)) & 0x0000FFFF0000FFFFULL;
+    v = (v | (v >> 16)) & 0x00000000FFFFFFFFULL;
+
+    return static_cast<uint32_t>(v);
+}
+
+std::pair<double, double> convert_grid_numbers_to_coordinates(
+    uint32_t grid_latitude_number,
+    uint32_t grid_longitude_number
+) {
+    double grid_latitude_min =
+        MIN_LATITUDE +
+        LATITUDE_RANGE * (grid_latitude_number / std::pow(2, 26));
+
+    double grid_latitude_max =
+        MIN_LATITUDE +
+        LATITUDE_RANGE * ((grid_latitude_number + 1) / std::pow(2, 26));
+
+    double grid_longitude_min =
+        MIN_LONGITUDE +
+        LONGITUDE_RANGE * (grid_longitude_number / std::pow(2, 26));
+
+    double grid_longitude_max =
+        MIN_LONGITUDE +
+        LONGITUDE_RANGE * ((grid_longitude_number + 1) / std::pow(2, 26));
+
+    double latitude =
+        (grid_latitude_min + grid_latitude_max) / 2;
+
+    double longitude =
+        (grid_longitude_min + grid_longitude_max) / 2;
+
+    return {latitude, longitude};
+}
+
+std::pair<double, double> geo_decode(uint64_t geo_code) {
+    uint64_t y = geo_code >> 1;
+    uint64_t x = geo_code;
+
+    uint32_t grid_latitude_number =
+        compact_int64_to_int32(x);
+
+    uint32_t grid_longitude_number =
+        compact_int64_to_int32(y);
+
+    return convert_grid_numbers_to_coordinates(
+        grid_latitude_number,
+        grid_longitude_number
+    );
+}
+
+double degrees_to_radians(const double &angle) {
+    return M_PI * angle / 180.0;
+}
+
+double haversine_distance(
+    const std::pair<double, double> &pos1,
+    const std::pair<double, double> &pos2
+) {
+    double lon1 = pos1.first;
+    double lat1 = pos1.second;
+
+    double lon2 = pos2.first;
+    double lat2 = pos2.second;
+
+    double lat_rad1 = degrees_to_radians(lat1);
+    double lat_rad2 = degrees_to_radians(lat2);
+    double lon_rad1 = degrees_to_radians(lon1);
+    double lon_rad2 = degrees_to_radians(lon2);
+
+    double diff_lat = lat_rad2 - lat_rad1;
+    double diff_lon = lon_rad2 - lon_rad1;
+
+    double computation = std::asin(
+        std::sqrt(
+            std::sin(diff_lat / 2) * std::sin(diff_lat / 2) +
+            std::cos(lat_rad1) * std::cos(lat_rad2) *
+            std::sin(diff_lon / 2) * std::sin(diff_lon / 2)
+        )
+    );
+
+    return 2 * EARTH_RADIUS_METERS * computation;
 }

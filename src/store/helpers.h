@@ -28,6 +28,7 @@ struct RdbLength
 };
 
 std::vector<std::string> parse_resp(std::string input);
+double parse_resp_string_to_double(const std::string &input);
 std::pair<long long, long long> parse_stream_id(const std::string &id, bool is_start = false);
 
 std::string encode_resp_string(const std::string &str);
@@ -50,3 +51,8 @@ std::vector<RdbEntry> parse_rdb(const std::string &contents);
 
 // other
 std::vector<std::string> split_spaces(const std::string &input);
+
+// geospatial helpers
+uint64_t geo_encode(const double &latitude, const double &longitude);
+std::pair<double, double> geo_decode(uint64_t geo_code);
+double haversine_distance(const std::pair<double, double> &pos1, const std::pair<double, double> &pos2);

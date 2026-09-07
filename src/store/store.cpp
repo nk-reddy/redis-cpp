@@ -11,6 +11,7 @@
 #include <ranges>
 #include <sstream>
 #include <iomanip>
+#include <cmath>
 
 void Store::set(const std::string &key, const std::string &value) {
     std::lock_guard<std::mutex> lock(mtx);
@@ -628,4 +629,46 @@ std::string Store::zrem(const std::string &key, const std::string &member) {
         }
     }
     return encode_resp_integer(0);
+}
+
+std::string Store::geoadd(const std::string &key, const std::string &member, const std::string &longitude, const std::string &latitude) {
+    std::lock_guard<std::mutex> lock(mtx);
+    double longitude_val = std::stod(longitude);
+    double latitude_val = std::stod(longitude);
+    if (std::abs(longitude_val) > 180 || std::abs(latitude_val) > 85.05112878) {
+        return "-ERR invalid longitude,latitude pair " + longitude + "," + latitude + "\r\n";
+    }
+
+    double score = static_cast<double>(geo_encode(longitude_val, latitude_val));
+    return zadd(key, member, score);
+}
+
+std::optional<std::pair<double, double>> Store::geopos(const std::string &key, const std::string &member) {
+    std::string response = zscore(key, member);
+    if (response == "$-1\r\n") { return std::nullopt; }
+
+    double response_val = parse_resp_string_to_double(response);
+    return geo_decode(static_cast<uint64_t>(response_val));
+}
+
+double Store::geodist(const std::string &key, const std::string &member_one, const std::string &member_two) {
+    auto pos1 = geopos(key, member_one);
+    auto pos2 = geopos(key, member_two);
+    if (!pos1.has_value() | !pos2.has_value()) { return -1; }
+    return haversine_distance(*pos1, *pos2);
+}
+
+std::string Store::geosearch(const std::string &key, const std::pair<double, double> &center, double &radius) {
+    std::vector<std::string> places_vec;
+    
+    auto it = data.find(key);
+    if (it == data.end()) { return "*0\r\n"; }
+    if (!std::holds_alternative<std::set<std::pair<double, std::string>>>(it->second.value)) { return "$-1\r\n"; }
+
+    auto &sorted_set = std::get<std::set<std::pair<double, std::string>>>(it->second.value);
+    for (const auto &[score, name] : sorted_set) {
+        std::pair<double, double> loc_info = geo_decode(score);
+        if (haversine_distance(center, loc_info) < radius) { places_vec.push_back(name); }
+    }
+    return encode_resp_array(places_vec);
 }

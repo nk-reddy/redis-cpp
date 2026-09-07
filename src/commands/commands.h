@@ -40,6 +40,12 @@ std::string handle_command_zcard(const std::vector<std::string>& args, Store &st
 std::string handle_command_zscore(const std::vector<std::string>& args, Store &store);
 std::string handle_command_zrem(const std::vector<std::string>& args, Store &store);
 
+// geospatial commands
+std::string handle_command_geoadd(const std::vector<std::string>& args, Store &store);
+std::string handle_command_geopos(const std::vector<std::string>& args, Store &store);
+std::string handle_command_geodist(const std::vector<std::string>& args, Store &store);
+std::string handle_command_geosearch(const std::vector<std::string>& args, Store &store);
+
 // special commands
 void handle_command_psync(int client_fd, const std::vector<std::string>& args, ServerState &server);
 

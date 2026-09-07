@@ -98,6 +98,18 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     else if (command == "zrem") {
         response = handle_command_zrem(data, store);
     }
+    else if (command == "geoadd") {
+        response = handle_command_geoadd(data, store);
+    }
+    else if (command == "geopos") {
+        response = handle_command_geopos(data, store);
+    }
+    else if (command == "geodist") {
+        response = handle_command_geodist(data, store);
+    }
+    else if (command == "geosearch") {
+        response = handle_command_geosearch(data, store);
+    }
     else {
         response = handle_command_default(client_state->in_subscribed_mode);
     }
@@ -523,4 +535,45 @@ std::string handle_command_zscore(const std::vector<std::string>& args, Store &s
 std::string handle_command_zrem(const std::vector<std::string>& args, Store &store) {
     if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
     return store.zrem(args[1], args[2]);
+}
+
+std::string handle_command_geoadd(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 5) { return "-ERR invalid arguments\r\n"; }
+    return store.geoadd(args[1], args[4], args[2], args[3]);
+}
+
+std::string handle_command_geopos(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
+    auto geopos_val = store.geopos(args[1], args[2]);
+    if (!geopos_val.has_value()) { return "*-1\r\n"; }
+
+    std::ostringstream out1, out2;
+    out1 << std::setprecision(17) << (*geopos_val).first;
+    out2 << std::setprecision(17) << (*geopos_val).second;
+
+    return encode_resp_array({out1.str(), out2.str()});
+}
+
+std::string handle_command_geodist(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 4) { return "-ERR invalid arguments\r\n"; }
+    auto geodist_val = store.geodist(args[1], args[2], args[3]);
+    if (geodist_val < 0) { return "$-1\r\n"; }
+
+    std::ostringstream out;
+    out << std::setprecision(17) << geodist_val;
+    return encode_resp_string(out.str());
+}
+
+// only works for this format and in meters:
+// GEOSEARCH places FROMLONLAT [2] [48] BYRADIUS [100] m
+std::string handle_command_geosearch(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 8) { return "-ERR invalid arguments\r\n"; }
+    if (args[2] != "FROMLONLAT" ||
+        args[5] != "BYRADIUS" ||
+        args[7] != "m") {
+        return "-ERR invalid arguments\r\n";
+    }
+    double radius = std::stod(args[6]);
+    std::pair<double, double> center {std::stod(args[3]), std::stod(args[4])};
+    return store.geosearch(args[1], center, radius);
 }

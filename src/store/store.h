@@ -65,4 +65,10 @@ class Store {
     std::string zcard(const std::string &key);
     std::string zscore(const std::string &key, const std::string &member);
     std::string zrem(const std::string &key, const std::string &member);
+
+    // geospatial commands functionality
+    std::string geoadd(const std::string &key, const std::string &member, const std::string &longitude, const std::string &latitude);
+    std::optional<std::pair<double, double>> geopos(const std::string &key, const std::string &member);
+    double geodist(const std::string &key, const std::string &member_one, const std::string &member_two);
+    std::string geosearch(const std::string &key, const std::pair<double, double> &center, double &radius);
 };
