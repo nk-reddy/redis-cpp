@@ -5,6 +5,8 @@
 #include <sstream>
 #include <cmath>
 #include <iostream>
+#include <iomanip>
+#include <openssl/evp.h>
 
 constexpr uint8_t RDB_TYPE_STRING = 0x00;
 constexpr uint8_t RDB_OPCODE_AUX = 0xFA;
@@ -525,3 +527,4 @@ double haversine_distance(
 
     return 2 * EARTH_RADIUS_METERS * computation;
 }
+

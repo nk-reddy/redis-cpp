@@ -219,3 +219,16 @@ int ServerState::publish_to_channel(const std::string &channel, const std::strin
     }
     return subscribers.size();
 }
+
+bool ServerState::auth_on_bootup(const std::string &username) {
+    return user_passwords[username].size() == 0;
+}
+
+std::unordered_set<std::string> ServerState::get_user_passwords(const std::string &username) {
+    if (!user_passwords.contains(username)) { return {}; }
+    return user_passwords.at(username);
+}
+
+void ServerState::add_user_password(const std::string &username, const std::string &hashed_password) {
+    user_passwords[username].insert(hashed_password);
+}

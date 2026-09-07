@@ -56,3 +56,5 @@ std::vector<std::string> split_spaces(const std::string &input);
 uint64_t geo_encode(const double &latitude, const double &longitude);
 std::pair<double, double> geo_decode(uint64_t geo_code);
 double haversine_distance(const std::pair<double, double> &pos1, const std::pair<double, double> &pos2);
+
+// auth helpers 

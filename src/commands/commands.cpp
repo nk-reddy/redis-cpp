@@ -10,6 +10,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <unordered_set>
 
 std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &raw_command, ClientState *client_state) {
     // handle the command
@@ -584,3 +585,69 @@ std::string handle_command_geosearch(const std::vector<std::string>& args, Store
     std::pair<double, double> center {std::stod(args[3]), std::stod(args[4])};
     return store.geosearch(args[1], center, radius);
 }
+
+// auth commands
+std::string handle_command_acl(const std::vector<std::string>& args, ServerState &server, ClientState *client_state) {
+    if (args.size() < 2) { return "-ERR invalid arguments\r\n"; }
+    std::string acl_type = args[1];
+    std::transform(acl_type.begin(), acl_type.end(), acl_type.begin(), ::tolower);
+    if (acl_type == "whoami") { 
+        return handle_command_acl_whoami(client_state); 
+    }
+    if (acl_type == "getuser") {
+        return handle_command_acl_getuser(args, server, client_state);
+    }
+    if (acl_type == "setuser") {
+        return handle_command_acl_setuser(args, server, client_state);
+    }
+
+
+    return "-ERR invalid arguments\r\n";
+}
+
+std::string handle_command_acl_whoami(ClientState *client_state) {
+    return client_state->username;
+}
+
+std::string handle_command_acl_getuser(const std::vector<std::string>& args, ServerState &server, ClientState *client_state) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
+
+    // build up the last element - passwords array
+    std::unordered_set<std::string> passwords = server.get_user_passwords(args[2]);
+    std::vector<std::string> passwords_vec(passwords.begin(), passwords.end());
+    std::string passwords_resp_arr = encode_resp_array(passwords_vec);
+
+    // build up the second element - flags array
+    std::vector<std::string> flags_vec;
+    if (passwords.empty()) { flags_vec.push_back("nopass"); }
+    std::string flags_resp_arr = encode_resp_array(flags_vec);
+
+    // build up the entire response
+    std::string response = "*4\r\n";
+    response += encode_resp_string("flags");
+    response += flags_resp_arr;
+    response += encode_resp_string("passwords");
+    response += passwords_resp_arr;
+    return response;
+}
+
+std::string handle_command_acl_setuser(const std::vector<std::string>& args, ServerState &server, ClientState *client_state) {
+    if (args.size() != 4) { return "-ERR invalid arguments\r\n"; }
+
+    std::string user = args[2];
+    std::string raw_pass = args[3];
+    if (!client_state->is_authenticated || client_state->username != user) {
+        return "-ERR invalid arguments\r\n";
+    }
+    if (!raw_pass.starts_with(">")) {
+        return "-ERR invalid arguments\r\n";
+    }
+
+    std::string new_pass = raw_pass.substr(1);
+
+
+
+
+    return "+OK\r\n";
+}
+

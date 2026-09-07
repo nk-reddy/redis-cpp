@@ -18,4 +18,8 @@ struct ClientState {
     std::queue<QueuedCommand> queued_commands {};
     std::unordered_map<std::string, long long> watched_keys {};
     std::unordered_set<std::string> subscribed_channels;
+
+    // auth 
+    bool is_authenticated = false;
+    std::string username = "default";
 };

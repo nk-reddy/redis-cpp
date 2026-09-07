@@ -44,7 +44,11 @@ class ServerState
 
     FileConfig config_file;
 
+    // pub-sub
     std::unordered_map<std::string, std::unordered_set<int>> channel_subscribers;
+
+    // authentication
+    std::unordered_map<std::string, std::unordered_set<std::string>> user_passwords;
 
     public:
     ServerState() = default;
@@ -100,4 +104,9 @@ class ServerState
     void subscribe_to_channel(const std::string &channel, int client_fd);
     void unsubscribe_from_channel(const std::string &channel, int client_fd);
     int publish_to_channel(const std::string &channel, const std::string &message);
+
+    // authentication
+    bool auth_on_bootup(const std::string &username);
+    std::unordered_set<std::string> get_user_passwords(const std::string &username);
+    void add_user_password(const std::string &username, const std::string &hashed_password);
 };

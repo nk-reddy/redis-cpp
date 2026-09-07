@@ -46,6 +46,12 @@ std::string handle_command_geopos(const std::vector<std::string>& args, Store &s
 std::string handle_command_geodist(const std::vector<std::string>& args, Store &store);
 std::string handle_command_geosearch(const std::vector<std::string>& args, Store &store);
 
+// auth commands
+std::string handle_command_acl(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
+std::string handle_command_acl_whoami(ClientState *client_state);
+std::string handle_command_acl_getuser(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
+std::string handle_command_acl_setuser(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
+
 // special commands
 void handle_command_psync(int client_fd, const std::vector<std::string>& args, ServerState &server);
 
