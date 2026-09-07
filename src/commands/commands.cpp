@@ -495,7 +495,7 @@ std::string handle_command_unsubscribe(const std::vector<std::string>& args, Ser
 
 std::string handle_command_zadd(const std::vector<std::string>& args, Store &store) {
     if (args.size() != 4) { return "-ERR invalid arguments\r\n"; }
-    double score = std::stol(args[2]);
+    double score = std::stod(args[2]);
     return store.zadd(args[1], args[3], score);
 }
 
