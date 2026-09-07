@@ -434,7 +434,7 @@ uint64_t geo_encode(const double &latitude, const double &longitude) {
     uint32_t lat_int = static_cast<uint32_t>(normalized_latitude);
     uint32_t lon_int = static_cast<uint32_t>(normalized_longitude);
 
-    return interleave(lon_int, lat_int);
+    return interleave(lat_int, lon_int);
 }
 
 uint32_t compact_int64_to_int32(uint64_t v) {
@@ -481,10 +481,10 @@ std::pair<double, double> geo_decode(uint64_t geo_code) {
     uint64_t y = geo_code >> 1;
     uint64_t x = geo_code;
 
-    uint32_t grid_longitude_number =
+    uint32_t grid_latitude_number =
         compact_int64_to_int32(x);
 
-    uint32_t grid_latitude_number =
+    uint32_t grid_longitude_number =
         compact_int64_to_int32(y);
 
     return convert_grid_numbers_to_coordinates(
