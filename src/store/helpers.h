@@ -58,3 +58,4 @@ std::pair<double, double> geo_decode(uint64_t geo_code);
 double haversine_distance(const std::pair<double, double> &pos1, const std::pair<double, double> &pos2);
 
 // auth helpers 
+std::string sha256(const std::string& input);

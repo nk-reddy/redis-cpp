@@ -232,3 +232,11 @@ std::unordered_set<std::string> ServerState::get_user_passwords(const std::strin
 void ServerState::add_user_password(const std::string &username, const std::string &hashed_password) {
     user_passwords[username].insert(hashed_password);
 }
+
+bool ServerState::authenticate_password(const std::string &username, const std::string &password) {
+    if (!user_passwords.contains(username)) { return false; }
+
+    const auto &passwords = user_passwords.at(username);
+    if (passwords.empty()) { return true; }
+    return passwords.contains(password);
+}

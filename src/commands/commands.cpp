@@ -13,6 +13,12 @@
 #include <unordered_set>
 
 std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &raw_command, ClientState *client_state) {
+    // handle auth issues
+    if (!client_state->is_authenticated) {
+        if (command != "auth") { return "-ERR NOAUTH Authentication required.\r\n"; }
+        return handle_command_auth(data, server, client_state);
+    }
+    
     // handle the command
     std::string response; 
     if (command == "echo") {
@@ -110,6 +116,12 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     }
     else if (command == "geosearch") {
         response = handle_command_geosearch(data, store);
+    }
+    else if (command == "acl") {
+        response = handle_command_acl(data, server, client_state);
+    }
+    else if (command == "auth") {
+        response = handle_command_auth(data, server, client_state);
     }
     else {
         response = handle_command_default(client_state->in_subscribed_mode);
@@ -600,13 +612,11 @@ std::string handle_command_acl(const std::vector<std::string>& args, ServerState
     if (acl_type == "setuser") {
         return handle_command_acl_setuser(args, server, client_state);
     }
-
-
     return "-ERR invalid arguments\r\n";
 }
 
 std::string handle_command_acl_whoami(ClientState *client_state) {
-    return client_state->username;
+    return encode_resp_string(client_state->username);
 }
 
 std::string handle_command_acl_getuser(const std::vector<std::string>& args, ServerState &server, ClientState *client_state) {
@@ -643,11 +653,22 @@ std::string handle_command_acl_setuser(const std::vector<std::string>& args, Ser
         return "-ERR invalid arguments\r\n";
     }
 
-    std::string new_pass = raw_pass.substr(1);
+    std::string hashed_pass = sha256(raw_pass.substr(1));
+    server.add_user_password(user, hashed_pass);
+    return "+OK\r\n";
+}
 
+std::string handle_command_auth(const std::vector<std::string>& args, ServerState &server, ClientState *client_state) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
 
+    std::string user = args[1];
+    std::string hashed_pass = sha256(args[2]);
+    if (!server.authenticate_password(user, hashed_pass)) {
+        return "-ERR WRONGPASS invalid username-password pair or user is disabled.\r\n";
+    }
 
-
+    client_state->username = user;
+    client_state->is_authenticated = true;
     return "+OK\r\n";
 }
 

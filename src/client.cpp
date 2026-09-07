@@ -21,6 +21,7 @@ void handle_client(int client_fd, Store &store, ServerState &server, bool is_mas
     // state variables SPECIFIC to the client
     ClientState client_state;
     client_state.client_fd = client_fd;
+    client_state.is_authenticated = server.auth_on_bootup(client_state.username);
 
     while (1) 
     {

@@ -51,6 +51,7 @@ std::string handle_command_acl(const std::vector<std::string>& args, ServerState
 std::string handle_command_acl_whoami(ClientState *client_state);
 std::string handle_command_acl_getuser(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
 std::string handle_command_acl_setuser(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
+std::string handle_command_auth(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
 
 // special commands
 void handle_command_psync(int client_fd, const std::vector<std::string>& args, ServerState &server);

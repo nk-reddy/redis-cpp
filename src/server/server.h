@@ -109,4 +109,5 @@ class ServerState
     bool auth_on_bootup(const std::string &username);
     std::unordered_set<std::string> get_user_passwords(const std::string &username);
     void add_user_password(const std::string &username, const std::string &hashed_password);
+    bool authenticate_password(const std::string &username, const std::string &password);
 };
