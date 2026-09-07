@@ -474,7 +474,7 @@ std::pair<double, double> convert_grid_numbers_to_coordinates(
     double longitude =
         (grid_longitude_min + grid_longitude_max) / 2;
 
-    return {latitude, longitude};
+    return {longitude, latitude};
 }
 
 std::pair<double, double> geo_decode(uint64_t geo_code) {
@@ -488,8 +488,8 @@ std::pair<double, double> geo_decode(uint64_t geo_code) {
         compact_int64_to_int32(y);
 
     return convert_grid_numbers_to_coordinates(
-        grid_longitude_number,
-        grid_latitude_number
+        grid_latitude_number,
+        grid_longitude_number
     );
 }
 
