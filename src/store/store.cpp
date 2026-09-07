@@ -768,12 +768,12 @@ std::string Store::bitop_and(const std::string &dest_key, const std::string &src
     // obtain the source strings 
     auto it = data.find(src_key1);
     if (it == data.end()) { value_one = ""; }
-    if (!std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+    else if (!std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
     else { value_one = std::get<std::string>(it->second.value); }
 
     auto it_two = data.find(src_key2);
     if (it_two == data.end()) { value_two = ""; }
-    if (!std::holds_alternative<std::string>(it_two->second.value)) { return ":0\r\n"; }
+    else if (!std::holds_alternative<std::string>(it_two->second.value)) { return ":0\r\n"; }
     else { value_two = std::get<std::string>(it_two->second.value); }
 
     // obtain the result
