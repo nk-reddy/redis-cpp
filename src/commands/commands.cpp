@@ -543,15 +543,22 @@ std::string handle_command_geoadd(const std::vector<std::string>& args, Store &s
 }
 
 std::string handle_command_geopos(const std::vector<std::string>& args, Store &store) {
-    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
-    auto geopos_val = store.geopos(args[1], args[2]);
-    if (!geopos_val.has_value()) { return "*-1\r\n"; }
+    if (args.size() < 3) { return "-ERR invalid arguments\r\n"; }
 
-    std::ostringstream out1, out2;
-    out1 << std::setprecision(17) << (*geopos_val).first;
-    out2 << std::setprecision(17) << (*geopos_val).second;
+    std::string response = "*" + std::to_string(args.size() - 2) + "\r\n";
+    for (size_t i = 2; i < args.size(); ++i) {
+        auto geopos_val = store.geopos(args[1], args[i]);
+        if (!geopos_val.has_value()) {
+            response += "*-1\r\n";
+            continue;
+        }
 
-    return encode_resp_array({out1.str(), out2.str()});
+        std::ostringstream out1, out2;
+        out1 << std::setprecision(17) << (*geopos_val).first;
+        out2 << std::setprecision(17) << (*geopos_val).second;
+        response += encode_resp_array({out1.str(), out2.str()});
+    }
+    return response;
 }
 
 std::string handle_command_geodist(const std::vector<std::string>& args, Store &store) {
