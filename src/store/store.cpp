@@ -606,7 +606,7 @@ std::string Store::zscore(const std::string &key, const std::string &member) {
     for (const auto &[score, name] : sorted_set) {
         if (name == member) { 
             std::ostringstream out;
-            out << std::setprecision(10) << score;
+            out << std::setprecision(17) << score;
             return encode_resp_string(out.str()); 
         }
     }
