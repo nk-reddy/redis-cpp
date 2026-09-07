@@ -724,7 +724,7 @@ std::string Store::getbit(const std::string &key, int &offset) {
     int bit_pos = offset % 8;
     if (char_pos >= value.length()) { return ":0\r\n"; }
 
-    int val = value[char_pos] & (1 << (7 - bit_pos));
+    int val = (value[char_pos] & (1 << (7 - bit_pos))) != 0;
     return encode_resp_integer(val);
 }
 
