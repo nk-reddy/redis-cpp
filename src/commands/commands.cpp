@@ -664,7 +664,7 @@ std::string handle_command_auth(const std::vector<std::string>& args, ServerStat
     std::string user = args[1];
     std::string hashed_pass = sha256(args[2]);
     if (!server.authenticate_password(user, hashed_pass)) {
-        return "-ERR WRONGPASS invalid username-password pair or user is disabled.\r\n";
+        return "-WRONGPASS invalid username-password pair or user is disabled.\r\n";
     }
 
     client_state->username = user;
