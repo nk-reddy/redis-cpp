@@ -749,7 +749,8 @@ std::string Store::bitcount(const std::string &key, int start, int stop) {
     auto &value = std::get<std::string>(it->second.value);
     int size = value.length();
     if (stop == -1) { stop = size - 1; }
-    if (start >= size || stop >= size) { return ":0\r\n"; }
+    if (start >= size) { return ":0\r\n"; }
+    if (stop >= size) { stop = size - 1; }
 
     int count = 0;
     for (size_t i = start; i <= stop; ++i) {
