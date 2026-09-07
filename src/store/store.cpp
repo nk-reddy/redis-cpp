@@ -9,6 +9,8 @@
 #include <fstream>
 #include <iterator>
 #include <ranges>
+#include <sstream>
+#include <iomanip>
 
 void Store::set(const std::string &key, const std::string &value) {
     std::lock_guard<std::mutex> lock(mtx);
@@ -602,7 +604,11 @@ std::string Store::zscore(const std::string &key, const std::string &member) {
 
     auto &sorted_set = std::get<std::set<std::pair<double, std::string>>>(it->second.value);
     for (const auto &[score, name] : sorted_set) {
-        if (name == member) { return encode_resp_string(std::to_string(score)); }
+        if (name == member) { 
+            std::ostringstream out;
+            out << std::setprecision(10) << score;
+            return encode_resp_string(out.str()); 
+        }
     }
     return "$-1\r\n";
 }
