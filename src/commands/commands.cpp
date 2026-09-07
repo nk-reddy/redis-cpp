@@ -80,6 +80,24 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     else if (command == "publish") {
         response = handle_command_publish(data, server);
     }
+    else if (command == "zadd") {
+        response = handle_command_zadd(data, store);
+    }
+    else if (command == "zrank") {
+        response = handle_command_zrank(data, store);
+    }
+    else if (command == "zrange") {
+        response = handle_command_zrange(data, store);
+    }
+    else if (command == "zcard") {
+        response = handle_command_zcard(data, store);
+    }
+    else if (command == "zscore") {
+        response = handle_command_zscore(data, store);
+    }
+    else if (command == "zrem") {
+        response = handle_command_zrem(data, store);
+    }
     else {
         response = handle_command_default(client_state->in_subscribed_mode);
     }
@@ -473,4 +491,36 @@ std::string handle_command_unsubscribe(const std::vector<std::string>& args, Ser
         args[1] + "\r\n" +
         ":" + std::to_string(client_state->subscribed_channels.size()) + "\r\n";
     return response;
+}
+
+std::string handle_command_zadd(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 4) { return "-ERR invalid arguments\r\n"; }
+    double score = std::stol(args[2]);
+    return store.zadd(args[1], args[3], score);
+}
+
+std::string handle_command_zrank(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
+    return store.zrank(args[1], args[2]);
+}
+
+std::string handle_command_zrange(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 4) { return "-ERR invalid arguments\r\n"; }
+    return store.zrange(args[1], args[2], args[3]);
+}
+
+std::string handle_command_zcard(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 2) { return "-ERR invalid arguments\r\n"; }
+    return store.zcard(args[1]);
+}
+
+std::string handle_command_zscore(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
+    return store.zscore(args[1], args[2]);
+}
+
+
+std::string handle_command_zrem(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
+    return store.zrem(args[1], args[2]);
 }

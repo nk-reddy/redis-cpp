@@ -503,3 +503,123 @@ std::vector<std::string> Store::get_keys() {
     std::ranges::copy(std::views::keys(data), std::back_inserter(keys));
     return keys;
 }
+
+std::string Store::zadd(const std::string &key, const std::string &member, double &score) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key); 
+    if (it != data.end()) {
+        if (!std::holds_alternative<std::set<std::pair<double, std::string>>>(it->second.value)) { return "-ERR key is not a sorted set\r\n"; }
+        auto &sorted_set = std::get<std::set<std::pair<double, std::string>>>(it->second.value);
+        
+        // check if the map already has the member
+        for (auto member_it = sorted_set.begin(); member_it != sorted_set.end(); ++member_it) {
+            if (member_it->second == member) {
+                sorted_set.erase(member_it);
+                sorted_set.insert({score, member});
+                return encode_resp_integer(0);
+            }
+        }
+        sorted_set.insert({score, member});
+        return encode_resp_integer(1);
+    }
+
+    data[key] = Entry{
+        .value = std::set<std::pair<double, std::string>>{{score, member}},
+        .type = "sorted set",
+        .expiry = std::nullopt,
+    };
+    return encode_resp_integer(1);
+}
+
+std::string Store::zrank(const std::string &key, const std::string &member) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) { return "$-1\r\n"; }
+    if (!std::holds_alternative<std::set<std::pair<double, std::string>>>(it->second.value)) { return "$-1\r\n"; }
+
+    auto &sorted_set = std::get<std::set<std::pair<double, std::string>>>(it->second.value);
+    
+    int rank = 0;
+    for (const auto &[_, name] : sorted_set) {
+        if (name == member) { return encode_resp_integer(rank); }
+        rank++;
+    }
+    return "$-1\r\n";
+}
+
+std::string Store::zrange(const std::string &key, const std::string &start, const std::string &stop) {
+    std::lock_guard<std::mutex> lock(mtx);
+    int start_i = std::stoi(start);
+    int stop_i = std::stoi(stop);
+
+    auto it = data.find(key);
+    if (it == data.end()) { return "*0\r\n"; }
+    if (!std::holds_alternative<std::set<std::pair<double, std::string>>>(it->second.value)) { return "*0\r\n"; }
+
+    auto &sorted_set = std::get<std::set<std::pair<double, std::string>>>(it->second.value);
+
+    // check for valid indices
+    int size = sorted_set.size();
+
+    // negative indices
+    if (start_i < 0) { start_i = size + start_i; }
+    if (stop_i < 0) { stop_i = size + stop_i; }
+
+    // clamp values if needed
+    if (start_i < 0) { start_i = 0; }
+    if (stop_i >= size) { stop_i = size - 1; }
+
+    if (start_i > stop_i) { return "*0\r\n"; }
+    if (start_i >= size) { return "*0\r\n"; }
+    
+    std::vector<std::string> response_members;
+    int i = 0;
+    for (const auto &[_, name] : sorted_set) {
+        if (i >= start_i && i <= stop_i) { response_members.push_back(name); }
+        if (i == stop_i) { break; }
+        i++;
+    }
+    return encode_resp_array(response_members);
+}
+
+std::string Store::zcard(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    auto it = data.find(key);
+    if (it == data.end()) { return encode_resp_integer(0); }
+    if (!std::holds_alternative<std::set<std::pair<double, std::string>>>(it->second.value)) { return encode_resp_integer(0); }
+
+    auto &sorted_set = std::get<std::set<std::pair<double, std::string>>>(it->second.value);
+    return encode_resp_integer(sorted_set.size());
+}
+
+std::string Store::zscore(const std::string &key, const std::string &member) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    auto it = data.find(key);
+    if (it == data.end()) { return "$-1\r\n"; }
+    if (!std::holds_alternative<std::set<std::pair<double, std::string>>>(it->second.value)) { return "$-1\r\n"; }
+
+    auto &sorted_set = std::get<std::set<std::pair<double, std::string>>>(it->second.value);
+    for (const auto &[score, name] : sorted_set) {
+        if (name == member) { return encode_resp_string(std::to_string(score)); }
+    }
+    return "$-1\r\n";
+}
+
+std::string Store::zrem(const std::string &key, const std::string &member) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    auto it = data.find(key);
+    if (it == data.end()) { return encode_resp_integer(0); }
+    if (!std::holds_alternative<std::set<std::pair<double, std::string>>>(it->second.value)) { return encode_resp_integer(0); }
+
+    auto &sorted_set = std::get<std::set<std::pair<double, std::string>>>(it->second.value);
+    for (auto member_it = sorted_set.begin(); member_it != sorted_set.end(); ++member_it) {
+        if (member_it->second == member) {
+            sorted_set.erase(member_it);
+            return encode_resp_integer(1);
+        }
+    }
+    return encode_resp_integer(0);
+}

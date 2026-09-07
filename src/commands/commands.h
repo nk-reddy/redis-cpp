@@ -32,6 +32,14 @@ std::string handle_command_subscribe(const std::vector<std::string>& args, Serve
 std::string handle_command_publish(const std::vector<std::string>& args, ServerState &server);
 std::string handle_command_unsubscribe(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
 
+// sorted set commands
+std::string handle_command_zadd(const std::vector<std::string>& args, Store &store);
+std::string handle_command_zrank(const std::vector<std::string>& args, Store &store);
+std::string handle_command_zrange(const std::vector<std::string>& args, Store &store);
+std::string handle_command_zcard(const std::vector<std::string>& args, Store &store);
+std::string handle_command_zscore(const std::vector<std::string>& args, Store &store);
+std::string handle_command_zrem(const std::vector<std::string>& args, Store &store);
+
 // special commands
 void handle_command_psync(int client_fd, const std::vector<std::string>& args, ServerState &server);
 

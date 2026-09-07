@@ -8,6 +8,8 @@
 #include <variant>
 #include <vector>
 #include <condition_variable>
+#include <set>
+#include <utility>
 
 struct StreamEntry {
     std::string id;
@@ -17,7 +19,8 @@ struct StreamEntry {
 using RedisValue = std::variant<
     std::string, 
     std::vector<std::string>,
-    std::vector<StreamEntry>
+    std::vector<StreamEntry>,
+    std::set<std::pair<double, std::string>>
 >;
 
 struct Entry {
@@ -54,4 +57,12 @@ class Store {
 
     void read_rdb_file(const std::string &file_path);
     std::vector<std::string> get_keys();
+
+    // sorted set functionality
+    std::string zadd(const std::string &key, const std::string &member, double &score);
+    std::string zrank(const std::string &key, const std::string &member);
+    std::string zrange(const std::string &key, const std::string &start, const std::string &stop);
+    std::string zcard(const std::string &key);
+    std::string zscore(const std::string &key, const std::string &member);
+    std::string zrem(const std::string &key, const std::string &member);
 };
