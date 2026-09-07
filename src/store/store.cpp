@@ -632,14 +632,13 @@ std::string Store::zrem(const std::string &key, const std::string &member) {
 }
 
 std::string Store::geoadd(const std::string &key, const std::string &member, const std::string &longitude, const std::string &latitude) {
-    std::lock_guard<std::mutex> lock(mtx);
     double longitude_val = std::stod(longitude);
-    double latitude_val = std::stod(longitude);
+    double latitude_val = std::stod(latitude);
     if (std::abs(longitude_val) > 180 || std::abs(latitude_val) > 85.05112878) {
         return "-ERR invalid longitude,latitude pair " + longitude + "," + latitude + "\r\n";
     }
 
-    double score = static_cast<double>(geo_encode(longitude_val, latitude_val));
+    double score = static_cast<double>(geo_encode(latitude_val, longitude_val));
     return zadd(key, member, score);
 }
 
@@ -659,6 +658,7 @@ double Store::geodist(const std::string &key, const std::string &member_one, con
 }
 
 std::string Store::geosearch(const std::string &key, const std::pair<double, double> &center, double &radius) {
+    std::lock_guard<std::mutex> lock(mtx);
     std::vector<std::string> places_vec;
     
     auto it = data.find(key);
