@@ -740,7 +740,7 @@ std::string Store::strlen(const std::string &key) {
 
 std::string Store::bitcount(const std::string &key, int start, int stop) {
     std::lock_guard<std::mutex> lock(mtx);
-    if (start > stop) { return ":0\r\n"; }
+    if (start > stop && stop != -1) { return ":0\r\n"; }
 
     auto it = data.find(key);
     if (it == data.end()) { return ":0\r\n"; }
