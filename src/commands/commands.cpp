@@ -123,6 +123,21 @@ std::string handle_command(const std::string &command, const std::vector<std::st
     else if (command == "auth") {
         response = handle_command_auth(data, server, client_state);
     }
+    else if (command == "setbit") {
+        response = handle_command_setbit(data, store);
+    }
+    else if (command == "getbit") {
+        response = handle_command_getbit(data, store);
+    }
+    else if (command == "strlen") {
+        response = handle_command_strlen(data, store);
+    }
+    else if (command == "bitcount") {
+        response = handle_command_bitcount(data, store);
+    }
+    else if (command == "bitop") {
+        response = handle_command_bitop(data, store);
+    }
     else {
         response = handle_command_default(client_state->in_subscribed_mode);
     }
@@ -670,5 +685,53 @@ std::string handle_command_auth(const std::vector<std::string>& args, ServerStat
     client_state->username = user;
     client_state->is_authenticated = true;
     return "+OK\r\n";
+}
+
+std::string handle_command_setbit(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 4) { return "-ERR invalid arguments\r\n"; }
+    if (args[3] != "0" && args[3] != "1") { return "-ERR invalid arguments\r\n"; }
+
+    int offset = std::stoi(args[2]);
+    bool is_set = false;
+    if (args[3] == "1") { is_set = true; }
+    return store.setbit(args[1], offset, is_set);
+}
+
+std::string handle_command_getbit(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 3) { return "-ERR invalid arguments\r\n"; }
+
+    int offset = std::stoi(args[2]);
+    return store.getbit(args[1], offset);
+}
+
+std::string handle_command_strlen(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 2) { return "-ERR invalid arguments\r\n"; }
+    return store.strlen(args[1]);
+}
+
+std::string handle_command_bitcount(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 2 || args.size() != 4) { return "-ERR invalid arguments\r\n"; }
+    int start, stop;
+    if (args.size() == 2) 
+    {
+        start = 0;
+        stop = -1;
+    }
+    else 
+    {
+        start = std::stoi(args[2]);
+        stop = std::stoi(args[3]);
+    }
+    return store.bitcount(args[1], start, stop);
+}
+
+std::string handle_command_bitop(const std::vector<std::string>& args, Store &store) {
+    if (args.size() != 5) { return "-ERR invalid arguments\r\n"; }
+    std::string type = args[1];
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+
+    if (type == "and") { return store.bitop_and(args[2], args[3], args[4]); }
+    if (type == "or") { return store.bitop_or(args[2], args[3], args[4]); }
+    return "-ERR invalid arguments\r\n";
 }
 

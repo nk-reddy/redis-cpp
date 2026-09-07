@@ -71,4 +71,12 @@ class Store {
     std::optional<std::pair<double, double>> geopos(const std::string &key, const std::string &member);
     double geodist(const std::string &key, const std::string &member_one, const std::string &member_two);
     std::string geosearch(const std::string &key, const std::pair<double, double> &center, double &radius);
+
+    // bitmap functionality
+    std::string setbit(const std::string &key, int &offset, bool val);
+    std::string getbit(const std::string &key, int &offset);
+    std::string strlen(const std::string &key);
+    std::string bitcount(const std::string &key, int start, int stop);
+    std::string bitop_and(const std::string &dest_key, const std::string &src_key1, const std::string &src_key2);
+    std::string bitop_or(const std::string &dest_key, const std::string &src_key1, const std::string &src_key2);
 };

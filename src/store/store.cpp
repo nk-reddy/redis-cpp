@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iomanip>
 #include <cmath>
+#include <bit>
 
 void Store::set(const std::string &key, const std::string &value) {
     std::lock_guard<std::mutex> lock(mtx);
@@ -671,4 +672,178 @@ std::string Store::geosearch(const std::string &key, const std::pair<double, dou
         if (haversine_distance(center, loc_info) < radius) { places_vec.push_back(name); }
     }
     return encode_resp_array(places_vec);
+}
+
+std::string Store::setbit(const std::string &key, int &offset, bool val) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it != data.end()) {
+        // case exists - we need to grab and modify the string
+        if (std::holds_alternative<std::string>(it->second.value)) { return "-ERR key exists and not a string.\r\n"; }
+        auto &value = std::get<std::string>(it->second.value);
+
+        // get the char to modify based on offset
+        int char_pos = offset / 8;
+        int bit_pos = offset % 8;
+        if (char_pos >= value.length()) { 
+            int to_add = char_pos - value.length() + 1;
+            value.append(to_add, '\0');
+         }
+
+        // modify but return the original 
+        int val = value[char_pos] & (1 << (7 - bit_pos));
+        if (val) { value[char_pos] |= (1 << (7 - bit_pos)); } 
+        else { value[char_pos] &= ~(1 << (7 - bit_pos)); }
+        return encode_resp_integer(val);
+    }
+
+    // case new - we need to create the string
+    int n_bytes = offset / 8;
+    int bit_pos = offset % 8;
+    std::string value(n_bytes, '\0');
+    if (val) { value[value.length() - 1] |= (1 << (7 - bit_pos)); }
+
+    data[key] = Entry{
+        .value = value,
+        .type = "string",
+        .expiry = std::nullopt,
+        .version = 1
+    };
+    return encode_resp_integer(0);
+}
+
+std::string Store::getbit(const std::string &key, int &offset) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) { return ":0\r\n"; }
+    if (std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+
+    auto &value = std::get<std::string>(it->second.value);
+
+    int char_pos = offset / 8;
+    int bit_pos = offset % 8;
+    if (char_pos >= value.length()) { return ":0\r\n"; }
+
+    int val = value[char_pos] & (1 << (7 - bit_pos));
+    return encode_resp_integer(val);
+}
+
+std::string Store::strlen(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = data.find(key);
+    if (it == data.end()) { return ":0\r\n"; }
+    if (std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+
+    auto &value = std::get<std::string>(it->second.value);
+    return encode_resp_integer(value.length());
+}
+
+std::string Store::bitcount(const std::string &key, int start, int stop) {
+    std::lock_guard<std::mutex> lock(mtx);
+    if (start > stop) { return ":0\r\n"; }
+
+    auto it = data.find(key);
+    if (it == data.end()) { return ":0\r\n"; }
+    if (std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+
+    auto &value = std::get<std::string>(it->second.value);
+    int size = value.length();
+    if (stop == -1) { stop = size - 1; }
+    if (start >= size || stop >= size) { return ":0\r\n"; }
+
+    int count = 0;
+    for (size_t i = start; i <= stop; ++i) {
+        count += std::popcount(static_cast<unsigned char>(value[i]));
+    }
+    return encode_resp_integer(count);
+}
+
+std::string Store::bitop_and(const std::string &dest_key, const std::string &src_key1, const std::string &src_key2) {
+    std::lock_guard<std::mutex> lock(mtx);
+    
+    // obtain the source strings 
+    auto it = data.find(src_key1);
+    if (it == data.end()) { return ":0\r\n"; }
+    if (std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+
+    auto it_two = data.find(src_key2);
+    if (it_two == data.end()) { return ":0\r\n"; }
+    if (std::holds_alternative<std::string>(it_two->second.value)) { return ":0\r\n"; }
+
+    auto &value_one = std::get<std::string>(it->second.value);
+    auto &value_two = std::get<std::string>(it_two->second.value);
+
+    // obtain the result
+    size_t max_len = std::max(value_one.length(), value_two.length());
+    std::string result;
+    result.resize(max_len);
+    for (size_t i = 0; i < max_len; ++i) {
+        unsigned char byte_one = i < value_one.size() ? value_one[i] : 0;
+        unsigned char byte_two = i < value_two.size() ? value_two[i] : 0;
+        result[i] = static_cast<char>(byte_one & byte_two);
+    }
+    
+    // check if the destination key already exists
+    auto it_three = data.find(dest_key);
+    if (it_three != data.end()) 
+    {
+        it_three->second.value = result;
+        it_three->second.type = "string";
+        it_three->second.version++;
+    }
+    else 
+    {
+        data[dest_key] = Entry{
+            .value = result,
+            .type = "string",
+            .expiry = std::nullopt,
+            .version = 1
+        };
+    }
+    return encode_resp_integer(result.length());
+}
+
+std::string Store::bitop_or(const std::string &dest_key, const std::string &src_key1, const std::string &src_key2) {
+    std::lock_guard<std::mutex> lock(mtx);
+    
+    // obtain the source strings 
+    auto it = data.find(src_key1);
+    if (it == data.end()) { return ":0\r\n"; }
+    if (std::holds_alternative<std::string>(it->second.value)) { return ":0\r\n"; }
+
+    auto it_two = data.find(src_key2);
+    if (it_two == data.end()) { return ":0\r\n"; }
+    if (std::holds_alternative<std::string>(it_two->second.value)) { return ":0\r\n"; }
+
+    auto &value_one = std::get<std::string>(it->second.value);
+    auto &value_two = std::get<std::string>(it_two->second.value);
+
+    // obtain the result
+    size_t max_len = std::max(value_one.length(), value_two.length());
+    std::string result;
+    result.resize(max_len);
+    for (size_t i = 0; i < max_len; ++i) {
+        unsigned char byte_one = i < value_one.size() ? value_one[i] : 0;
+        unsigned char byte_two = i < value_two.size() ? value_two[i] : 0;
+        result[i] = static_cast<char>(byte_one | byte_two);
+    }
+    
+    // check if the destination key already exists
+    auto it_three = data.find(dest_key);
+    if (it_three != data.end()) 
+    {
+        it_three->second.value = result;
+        it_three->second.type = "string";
+        it_three->second.version++;
+    }
+    else 
+    {
+        data[dest_key] = Entry{
+            .value = result,
+            .type = "string",
+            .expiry = std::nullopt,
+            .version = 1
+        };
+    }
+    return encode_resp_integer(result.length());  
 }

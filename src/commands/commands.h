@@ -53,6 +53,13 @@ std::string handle_command_acl_getuser(const std::vector<std::string>& args, Ser
 std::string handle_command_acl_setuser(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
 std::string handle_command_auth(const std::vector<std::string>& args, ServerState &server, ClientState *client_state);
 
+// bitmap commands
+std::string handle_command_setbit(const std::vector<std::string>& args, Store &store);
+std::string handle_command_getbit(const std::vector<std::string>& args, Store &store);
+std::string handle_command_strlen(const std::vector<std::string>& args, Store &store);
+std::string handle_command_bitcount(const std::vector<std::string>& args, Store &store);
+std::string handle_command_bitop(const std::vector<std::string>& args, Store &store);
+
 // special commands
 void handle_command_psync(int client_fd, const std::vector<std::string>& args, ServerState &server);
 
