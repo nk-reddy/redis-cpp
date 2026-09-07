@@ -15,7 +15,7 @@
 std::string handle_command(const std::string &command, const std::vector<std::string> &data, Store &store, ServerState &server, const std::string &raw_command, ClientState *client_state) {
     // handle auth issues
     if (client_state != nullptr && !client_state->is_authenticated) {
-        if (command != "auth") { return "-ERR NOAUTH Authentication required.\r\n"; }
+        if (command != "auth") { return "-NOAUTH Authentication required.\r\n"; }
         return handle_command_auth(data, server, client_state);
     }
     
