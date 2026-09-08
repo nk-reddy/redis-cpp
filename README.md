@@ -1,6 +1,6 @@
-# Redis Clone in C++
+# Redis Clone
 
-A Redis clone implemented in C++ as part of the codecrafters challenge. Implements a TCP server that speaks RESP, 
+A Redis clone implemented in C++ as part of the CodeCrafters Redis challenge. Implements a TCP server that speaks RESP, 
 maintains per-client state, stores data in memory, and supports many Redis functions.
 
 ## Features
@@ -34,6 +34,19 @@ src/
 ├── server/
 └── store/
 ```
+
+## Command-Line Options
+
+| Option | Description |
+| --- | --- |
+| `--port <port>` | listen on a custom port (defaults to `6379`) |
+| `--replicaof <host> <port>` | start the server as a replica |
+| `--dir <path>` | set the persistence directory |
+| `--dbfilename <filename>` | set the RDB filename |
+| `--appendonly <yes\|no>` | enable/disable AOF persistence |
+| `--appenddirname <directory>` | set the AOF directory name |
+| `--appendfilename <filename>` | set the AOF filename |
+| `--appendfsync <policy>` | configure the AOF fsync policy |
 
 ## Building
 
@@ -133,4 +146,4 @@ QUEUED
 2) "redis"
 ```
 
-`WATCH` is also supported to detect modifications to watched keys before a transaction executes.
+`WATCH` also detects modifications to watched keys before a transaction executes.
