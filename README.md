@@ -1,31 +1,136 @@
-This is a starting point for C++ solutions to the
-["Build Your Own Redis" Challenge](https://codecrafters.io/challenges/redis).
+# Redis Clone in C++
 
-In this challenge, you'll build a toy Redis clone that's capable of handling
-basic commands like `PING`, `SET` and `GET`. Along the way we'll learn about
-event loops, the Redis protocol and more.
+A Redis clone implemented in C++ as part of the codecrafters challenge. Implements a TCP server that speaks RESP, 
+maintains per-client state, stores data in memory, and supports many Redis functions.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Features
 
-# Passing the first stage
+- TCP server through posix sockets
+- RESP command parsing and response encoding
+- Concurrent client handling with threads
+- In-memory key/value store with multiple value types
+- Key expiration
+- Transactions with `MULTI`, `EXEC`, `DISCARD`, `WATCH`, and `UNWATCH`
+- Primary/replica replication and command propagation
+- RDB file loading
+- AOF persistence and replay
+- Pub/Sub
+- Redis streams
+- Sorted sets
+- Geospatial commands
+- Bitmap operations
+- ACL-based authentication
 
-The entry point for your Redis implementation is in `src/main.cpp`. Study and
-uncomment the relevant code, then run the command below to execute the tests on
-our servers:
+## Architecture
 
-```sh
-codecrafters submit
+```text
+src/
+├── main.cpp
+├── client.cpp
+├── client-state/
+├── cli/
+├── commands/
+├── replication/
+├── server/
+└── store/
 ```
 
-That's all!
+## Building
 
-# Stage 2 & beyond
+### Requirements
 
-Note: This section is for stages 2 and beyond.
+- C++23 compiler
+- CMake
+- pthreads
+- standalone Asio
+- OpenSSL
 
-1. Ensure you have `cmake` installed locally
-1. Run `./your_program.sh` to run your Redis server, which is implemented in
-   `src/main.cpp`.
-1. Run `codecrafters submit` to submit your solution to CodeCrafters. Test
-   output will be streamed to your terminal.
+Build with:
+
+```bash
+cmake -B build
+cmake --build build
+```
+
+The executable will be created at:
+
+```bash
+./build/redis
+```
+
+## Running
+
+Start the server on the default Redis port:
+
+```bash
+./build/redis
+```
+
+Then connect with the standard Redis CLI:
+
+```bash
+redis-cli
+```
+
+Example:
+
+```text
+127.0.0.1:6379> SET greeting hello
+OK
+
+127.0.0.1:6379> GET greeting
+"hello"
+```
+
+### Custom port
+
+Start the server on a different port:
+
+```bash
+./build/redis --port 6380
+```
+
+Connect with:
+
+```bash
+redis-cli -p 6380
+```
+
+### Start a replica
+
+Start the primary:
+
+```bash
+./build/redis --port 6379
+```
+
+Start another instance as its replica:
+
+```bash
+./build/redis --port 6380 --replicaof localhost 6379
+```
+
+### Load an RDB file
+
+```bash
+./build/redis --dir /path/to/data --dbfilename dump.rdb
+```
+
+## Example: Transactions
+
+```text
+127.0.0.1:6379> MULTI
+OK
+
+127.0.0.1:6379> SET name redis
+QUEUED
+
+127.0.0.1:6379> GET name
+QUEUED
+
+127.0.0.1:6379> EXEC
+1) OK
+2) "redis"
+```
+
+`WATCH` is also supported to detect modifications to watched keys before a transaction executes.
